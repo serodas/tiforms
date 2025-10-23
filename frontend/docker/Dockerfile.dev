@@ -1,0 +1,43 @@
+# ==========================================================
+# 🏗️ Etapa 1: Build (compilación del frontend)
+# ==========================================================
+FROM node:20-alpine AS builder
+
+# Definir directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias primero (para aprovechar cache)
+COPY package*.json ./
+
+# Instalar dependencias (incluye devDependencies)
+RUN npm ci
+
+# Copiar todo el código del proyecto
+COPY . .
+
+# Construir el proyecto Next.js para producción
+RUN npm run build
+
+# ==========================================================
+# 🚀 Etapa 2: Runtime (servidor liviano)
+# ==========================================================
+FROM node:20-alpine AS runner
+
+# Establecer NODE_ENV a producción
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar solo lo necesario desde el builder
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+# Exponer puerto
+EXPOSE 3000
+
+# Comando de inicio
+CMD ["npm", "start"]

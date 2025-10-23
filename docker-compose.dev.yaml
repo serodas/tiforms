@@ -1,0 +1,34 @@
+services:
+  tiforms-backend:
+    container_name: tiforms-backend
+    build:
+      context: ./backend
+      dockerfile: ./docker/Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    restart: unless-stopped
+    environment:
+      - DJANGO_DEBUG=True
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+
+  tiforms-frontend:
+    container_name: tiforms-frontend
+    build:
+      context: ./frontend
+      dockerfile: ./docker/Dockerfile.dev
+    command: npm run dev  # (solo para modo desarrollo)
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://tiforms-backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - tiforms-backend
+

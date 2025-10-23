@@ -1,0 +1,19 @@
+[PROD]
+Description=IBM i Access ODBC Driver
+Driver=/opt/ibm/iaccess/lib64/libcwbodbc.so
+System=10.25.2.10
+UserID=${DB2_USER}
+Password=${DB2_PASSWORD}
+Naming=0
+DefaultLibraries=BDSALUD
+Database=${DB2_DATABASE}
+
+[DEV]
+Description=IBM i Access ODBC Driver
+Driver=/opt/ibm/iaccess/lib64/libcwbodbc.so
+System=10.25.2.7
+UserID=${DB2_USER}
+Password=${DB2_PASSWORD}
+Naming=0
+DefaultLibraries=BDSALUD
+Database=${DB2_DATABASE}
