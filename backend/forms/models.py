@@ -1,6 +1,25 @@
 from django.db import models
 
 
+class Transaccion(models.Model):
+    interno = models.AutoField(primary_key=True, db_column="INTERNO")
+    num_documento_id_obligado = models.CharField(
+        max_length=50, db_column="NUMDOCUMENTOIDOBLIGADO"
+    )
+    num_factura = models.CharField(max_length=50, db_column="NUMFACTURA")
+    tipo_nota = models.CharField(max_length=10, db_column="TIPONOTA")
+    num_nota = models.CharField(max_length=50, db_column="NUMNOTA")
+    estado = models.CharField(max_length=20, db_column="ESTADO")
+    estado_nota = models.CharField(max_length=20, db_column="ESTADO_NOTA")
+
+    class Meta:
+        db_table = '"BDRIPS"."TRANSACCION"'
+        managed = False  # evita que Django intente crear/modificar la tabla
+
+    def __str__(self):
+        return f"Transaccion {self.num_factura} - Estado: {self.estado}"
+
+
 class TiForm(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
