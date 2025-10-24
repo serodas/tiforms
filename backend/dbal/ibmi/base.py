@@ -78,6 +78,11 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
     def __init__(self, settings_dict, alias="default", *args, **kwargs):
         super().__init__(settings_dict, alias, *args, **kwargs)
+        self.ops = self.ops_class(self)
+
+    @property
+    def operators(self):
+        return self.ops.operators
 
     def _set_autocommit(self, autocommit):
         if self.connection:

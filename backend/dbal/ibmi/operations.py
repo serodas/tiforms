@@ -3,6 +3,23 @@ from django.db.backends.base.operations import BaseDatabaseOperations
 
 class DatabaseOperations(BaseDatabaseOperations):
     compiler_module = "django.db.models.sql.compiler"
+    # Diccionario obligatorio para lookups (filtros de Django)
+    operators = {
+        "exact": "= %s",
+        "iexact": "LIKE %s",
+        "contains": "LIKE %s",
+        "icontains": "LIKE %s",
+        "gt": "> %s",
+        "gte": ">= %s",
+        "lt": "< %s",
+        "lte": "<= %s",
+        "startswith": "LIKE %s",
+        "istartswith": "LIKE %s",
+        "endswith": "LIKE %s",
+        "iendswith": "LIKE %s",
+        "range": "BETWEEN %s AND %s",
+        "isnull": "IS NULL",
+    }
 
     def quote_name(self, name):
         """
