@@ -16,26 +16,6 @@ files = [
 tests = ["mypy (>=1.14.0)", "pytest", "pytest-asyncio"]
 
 [[package]]
-name = "dbal"
-version = "0.1.0"
-description = "Driver Django para conexión con IBM i / DB2 (DB2 for i)"
-optional = false
-python-versions = ">=3.11"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-django = ">=4.0,<6.0"
-pyodbc = ">=5.0.0,<6.0.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/serodas/django-dbal-ibmi.git"
-reference = "HEAD"
-resolved_reference = "25b9bd224bd21c1e82ee37c6d91e37c64c78a0bd"
-
-[[package]]
 name = "django"
 version = "5.2.7"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
@@ -239,4 +219,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "e5b1fe41408036d58ca13361d8a5b1dbfd6c4610337f492ee2a4f467209aaa08"
+content-hash = "6dd71f72978d18bd9bc84e3a966887b492d158f5440b4f6eb47b7f40ffe131df"
