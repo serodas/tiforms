@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "forms",
 ]
 
 MIDDLEWARE = [
@@ -76,8 +77,17 @@ WSGI_APPLICATION = "app.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        # "ENGINE": "django.db.backends.sqlite3",
+        # "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "dbal.ibmi",
+        "NAME": os.environ.get("DB2_DSN", "PROD"),
+        "USER": os.environ.get("DB2_USER"),
+        "PASSWORD": os.environ.get("DB2_PASSWORD"),
+        "HOST": os.environ.get("DB2_HOST"),
+        "PORT": os.environ.get("DB2_PORT"),
+        "OPTIONS": {
+            "driver": "IBM i Access ODBC Driver",
+        },
     }
 }
 
