@@ -1,24 +1,24 @@
-from django.shortcuts import render
-from django.http import JsonResponse
-from .models import Transaccion
+from .models import Form, FormField, FormSubmission
+from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from .serializers import FormSerializer, FormFieldSerializer, FormSubmissionSerializer
 
-@api_view(["GET"])
-def test_connection_ibmi(request):
-    forms = Transaccion.objects.all()[:10]
 
-    # Convertir a lista de diccionarios
-    data = [
-        {
-            "name": f.num_factura,
-            "description": f.tipo_nota,
-        }
-        for f in forms
-    ]
+class FormViewSet(viewsets.ModelViewSet):
+    queryset = Form.objects.all().order_by("-created_at")
+    serializer_class = FormSerializer
 
-    return JsonResponse(data, safe=False)
+
+class FormFieldViewSet(viewsets.ModelViewSet):
+    queryset = FormField.objects.all().order_by("-created_at")
+    serializer_class = FormFieldSerializer
+
+
+class FormSubmissionViewSet(viewsets.ModelViewSet):
+    queryset = FormSubmission.objects.all().order_by("-created_at")
+    serializer_class = FormSubmissionSerializer
 
 
 @api_view(["GET"])
