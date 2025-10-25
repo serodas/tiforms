@@ -16,14 +16,30 @@ class IbmiCursorWrapper:
         self.ops = ops
         self._lastrowid = None
 
+    def prepare_sql(self, sql, params):
+        """
+        Convierte %s a ? y transforma tipos incompatibles con DB2.
+        """
+        if params:
+            new_params = []
+            for p in params:
+                if isinstance(p, bool):
+                    new_params.append(1 if p else 0)
+                else:
+                    new_params.append(p)
+            sql = sql.replace("%s", "?")
+            return sql, new_params
+        return sql, params
+
     def execute(self, sql, params=None):
-        sql, params = self.ops.prepare_sql(sql, params)
+        sql, params = self.prepare_sql(sql, params)
+
         if params:
             result = self.cursor.execute(sql, params)
         else:
             result = self.cursor.execute(sql)
 
-        # Intentamos capturar el último ID generado
+        # Captura último ID generado
         if sql.strip().upper().startswith("INSERT"):
             try:
                 self.cursor.execute("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1")
@@ -34,15 +50,28 @@ class IbmiCursorWrapper:
         return result
 
     def executemany(self, sql, param_list):
-        sql, param_list = self.ops.prepare_sql(sql, param_list)
-        result = self.cursor.executemany(sql, param_list)
-        # No soportamos lastrowid múltiple aquí
+        new_param_list = []
+        for params in param_list:
+            _, new_params = self.prepare_sql(sql, params)
+            new_param_list.append(new_params)
+
+        result = self.cursor.executemany(sql, new_param_list)
         self._lastrowid = None
         return result
 
     @property
     def lastrowid(self):
         return self._lastrowid
+
+    # --- Compatibilidad con Django ORM ---
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def __iter__(self):
+        return iter(self.cursor)
 
     def __getattr__(self, attr):
         return getattr(self.cursor, attr)
