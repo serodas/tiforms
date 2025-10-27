@@ -179,7 +179,8 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             fieldId={field.id}
                             label={field.label}
                             fileRefs={fileRefs}
-                            hasError={showError}
+                            hasError={!!showError}
+                            required={!!field.required}
                         />
                         {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
                     </div>
@@ -191,7 +192,11 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             {field.label} {requiredMark}
                         </label>
                         <div className="rounded-md overflow-hidden bg-gray-50" style={borderStyle}>
-                            <SignaturePad ref={signatureRef} onEnd={handleSignatureChange} />
+                            <SignaturePad
+                                ref={signatureRef}
+                                onEnd={handleSignatureChange}
+                                hasError={showError}
+                            />
                         </div>
                         {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
                     </div>

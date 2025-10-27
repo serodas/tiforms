@@ -13,10 +13,17 @@ interface FileInputCameraProps {
     fieldId: number;
     label: string;
     fileRefs: React.MutableRefObject<Record<number, FileItem[]>>;
-    hasError?: boolean; // borde rojo opcional
+    hasError?: boolean;
+    required?: boolean;
 }
 
-const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileRefs, hasError }) => {
+const FileInputCamera: React.FC<FileInputCameraProps> = ({
+    fieldId,
+    label,
+    fileRefs,
+    hasError,
+    required
+}) => {
     const webcamRef = useRef<Webcam | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -33,7 +40,6 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
             const blob = dataURLtoBlob(imageSrc);
             const file = new File([blob], "captura.jpg", { type: "image/jpeg" });
             const newFile: FileItem = { name: file.name, src: imageSrc, type: file.type, file };
-
             const updatedFiles = [...files, newFile];
             setFiles(updatedFiles);
             fileRefs.current[fieldId] = updatedFiles;
@@ -84,16 +90,17 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
         return new Blob([array], { type: mime });
     }
 
+    const requiredMark = required ? <span className="text-red-500">*</span> : null;
+
     return (
         <div className="w-full flex flex-col gap-2 mb-4">
-            <label className="block text-gray-700 font-medium mb-1">{label}</label>
+            <label className="block text-gray-700 font-medium mb-1">
+                {label} {requiredMark}
+            </label>
 
-            {/* Contenedor input visual con borde */}
             <div
-                className={`flex items-center rounded-lg overflow-hidden shadow-sm bg-white`}
-                style={{
-                    border: hasError ? "1px solid #f6abab" : "1px solid #d1d5db"
-                }}
+                className="flex items-center rounded-lg overflow-hidden shadow-sm bg-white"
+                style={{ border: hasError ? "1px solid #f6abab" : "1px solid #d1d5db" }}
             >
                 <div className="flex-grow px-3 py-2 text-gray-600 truncate">
                     {files.length === 0 ? "Seleccionar archivos" : `${files.length} archivo(s) seleccionado(s)`}
@@ -115,6 +122,12 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
                     </button>
                 </div>
             </div>
+
+            {hasError && (
+                <p className="text-sm mt-1" style={{ color: "#f6abab" }}>
+                    Este campo es obligatorio
+                </p>
+            )}
 
             <input
                 ref={fileInputRef}

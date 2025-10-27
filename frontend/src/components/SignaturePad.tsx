@@ -13,7 +13,11 @@ export interface SignaturePadHandle {
     isSigned: () => boolean;
 }
 
-const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
+interface SignaturePadProps {
+    hasError?: boolean;
+}
+
+const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(({ hasError }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
     const drawing = useRef(false);
@@ -27,7 +31,7 @@ const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
         if (!ctx) return;
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
-        ctx.strokeStyle = "#111827"; // Tailwind gray-900
+        ctx.strokeStyle = "#111827";
         ctxRef.current = ctx;
 
         // Ajustar resolución del canvas (HDPI fix)
@@ -93,7 +97,10 @@ const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseLeave={stopDrawing}
-                className="signature-canvas"
+                className="signature-canvas w-full h-40 rounded-md"
+                style={{
+                    border: hasError ? "1px solid #f6abab" : "1px solid #d1d5db",
+                }}
             />
             <button
                 type="button"
