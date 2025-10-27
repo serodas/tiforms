@@ -6,6 +6,7 @@ import React, {
     useImperativeHandle,
     forwardRef,
 } from "react";
+import { FaTimes } from "react-icons/fa";
 
 export interface SignaturePadHandle {
     clear: () => void;
@@ -34,7 +35,6 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(({ hasErr
         ctx.strokeStyle = "#111827";
         ctxRef.current = ctx;
 
-        // Ajustar resolución del canvas (HDPI fix)
         const resizeCanvas = () => {
             const ratio = window.devicePixelRatio || 1;
             canvas.width = canvas.offsetWidth * ratio;
@@ -90,24 +90,26 @@ const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(({ hasErr
     }));
 
     return (
-        <div className="flex flex-col space-y-2">
+        <div className="relative flex flex-col space-y-2">
             <canvas
                 ref={canvasRef}
                 onMouseDown={startDrawing}
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseLeave={stopDrawing}
-                className="signature-canvas w-full h-40 rounded-md"
+                className="signature-canvas w-full h-40 rounded-md border"
                 style={{
-                    border: hasError ? "1px solid #f6abab" : "1px solid #d1d5db",
+                    borderColor: hasError ? "#f6abab" : "#d1d5db",
                 }}
             />
+            {/* Botón flotante en la esquina superior derecha */}
             <button
                 type="button"
                 onClick={() => ref && (ref as any).current?.clear()}
-                className="self-end text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                className="absolute bottom-2 right-2 p-2 bg-white/80 hover:bg-red-500 hover:text-white text-gray-600 rounded-full shadow-md transition"
+                title="Limpiar firma"
             >
-                Limpiar firma
+                <FaTimes className="text-lg" />
             </button>
         </div>
     );
