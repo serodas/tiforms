@@ -99,13 +99,13 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
             </label>
 
             <div
-                className="flex items-center rounded-lg overflow-hidden shadow-sm bg-white"
-                style={{ border: hasError ? "1px solid #f6abab" : "1px solid #d1d5db" }}
+                className="flex items-center rounded-lg overflow-hidden shadow-sm bg-white w-full h-18"
+                style={{ border: hasError ? "1px dashed #f6abab" : "1px dashed #d1d5db" }}
             >
                 <div className="flex-grow px-3 py-2 text-gray-600 truncate">
                     {files.length === 0 ? "Seleccionar archivos" : `${files.length} archivo(s) seleccionado(s)`}
                 </div>
-                <div className="flex items-center bg-gray-50 border-l border-gray-200">
+                <div className="flex items-center">
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
