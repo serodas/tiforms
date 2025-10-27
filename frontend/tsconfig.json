@@ -36,7 +36,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     ".next/dev/dev/types/**/*.ts"
-  ],
+, "src/app/forms/[id]/page.tsx"  ],
   "exclude": [
     "node_modules"
   ]

@@ -26,7 +26,11 @@ SECRET_KEY = "django-insecure-s#-&3qpl$^-vro7aij5x^eyz!w1=yjb#t1%o1cc%tk=waz#q+n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "tiforms-backend"]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
 
 LOGGING = {
     "version": 1,
@@ -53,11 +57,13 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "forms",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
