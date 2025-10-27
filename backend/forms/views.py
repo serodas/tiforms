@@ -22,7 +22,6 @@ class FormSubmissionViewSet(viewsets.ModelViewSet):
     serializer_class = FormSubmissionSerializer
 
     def create(self, request, *args, **kwargs):
-        # Copiar los datos del request
         data = request.data.copy()
         form_id = data.get("form_id") or data.get("form")
 
@@ -38,27 +37,31 @@ class FormSubmissionViewSet(viewsets.ModelViewSet):
                 {"error": "Formulario no encontrado"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        # Construir JSON para almacenar en TextField
         submission_data = {}
 
-        # Campos normales (valores de texto)
+        # Campos de texto, fechas, etc.
         for key, value in data.items():
             if key != "form_id" and key != "form":
                 submission_data[key] = value
 
-        # Archivos y firmas
-        for key, file in request.FILES.items():
-            # Puedes guardar solo el nombre del archivo, o subir a storage y guardar URL
-            # Por simplicidad, guardamos el nombre
-            submission_data[key] = file.name
+        # Archivos (documentos, firmas, fotos) de forma dinámica
+        for key in request.FILES:
+            files = request.FILES.getlist(
+                key
+            )  # Esto devuelve todos los archivos con ese nombre
+            if len(files) == 1:
+                submission_data[key] = files[0].name  # o sube a storage y guarda la URL
+            else:
+                submission_data[key] = [f.name for f in files]
 
-        # Serializar y guardar
+        # Guardar en la base
         serializer = self.get_serializer(
             data={"form": form.id, "data": json.dumps(submission_data)}
         )
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
