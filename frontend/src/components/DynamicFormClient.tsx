@@ -24,27 +24,52 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
+    const [touched, setTouched] = useState<Record<number, boolean>>({});
 
     const valuesRef = useRef<Record<number, string>>({});
     const fileRefs = useRef<Record<number, FileItem[]>>({});
     const signatureRef = useRef<SignaturePadHandle | null>(null);
 
-    function validate(): string[] {
-        const missing: string[] = [];
-        for (const field of form.fields) {
-            if (field.required) {
-                if (field.field_type === "file") {
-                    const files = fileRefs.current[field.id] || [];
-                    if (files.length === 0) missing.push(field.label);
-                } else if (field.field_type === "signature") {
-                    if (!signatureRef.current?.isSigned()) missing.push(field.label);
-                } else {
-                    const val = valuesRef.current[field.id];
-                    if (!val) missing.push(field.label);
-                }
-            }
+    function validateField(field: FormField) {
+        if (!field.required) return "";
+
+        if (field.field_type === "file") {
+            const files = fileRefs.current[field.id] || [];
+            if (files.length === 0) return "Este campo es obligatorio";
+        } else if (field.field_type === "signature") {
+            if (!signatureRef.current?.isSigned()) return "La firma es obligatoria";
+        } else {
+            const val = valuesRef.current[field.id];
+            if (!val) return "Este campo es obligatorio";
         }
-        return missing;
+
+        return "";
+    }
+
+    function validateAll(): Record<number, string> {
+        const errors: Record<number, string> = {};
+        for (const field of form.fields) {
+            const err = validateField(field);
+            if (err) errors[field.id] = err;
+        }
+        setFieldErrors(errors);
+        return errors;
+    }
+
+    function handleBlur(field: FormField) {
+        setTouched((prev) => ({ ...prev, [field.id]: true }));
+        const err = validateField(field);
+        setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
+    }
+
+    // Para signature, marcar como touched al dibujar
+    function handleSignatureChange() {
+        const field = form.fields.find(f => f.field_type === "signature");
+        if (!field) return;
+        setTouched((prev) => ({ ...prev, [field.id]: true }));
+        const err = validateField(field);
+        setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
     }
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -52,9 +77,9 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setError(null);
         setSuccessMsg(null);
 
-        const missing = validate();
-        if (missing.length) {
-            setError("Faltan campos requeridos: " + missing.join(", "));
+        const errors = validateAll();
+        if (Object.keys(errors).length > 0) {
+            setError("Faltan campos requeridos");
             return;
         }
 
@@ -96,6 +121,8 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             signatureRef.current?.clear();
             valuesRef.current = {};
             fileRefs.current = {};
+            setFieldErrors({});
+            setTouched({});
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -115,25 +142,15 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     function renderField(field: FormField) {
         const id = field.id;
         const requiredMark = field.required ? <span className="text-red-500">*</span> : null;
-
         const commonClass =
-            "w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none";
+            "w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none";
+
+        const showError = touched[id] && fieldErrors[id];
+
+        const borderStyle = showError ? { borderColor: "#f6abab" } : { borderColor: "#d1d5db" }; // Tailwind gray-300 default
 
         switch (field.field_type) {
             case "text":
-                return (
-                    <div className="mb-4" key={id}>
-                        <label className="block text-gray-700 font-medium mb-1">
-                            {field.label} {requiredMark}
-                        </label>
-                        <input
-                            type="text"
-                            className={commonClass}
-                            onChange={(e) => (valuesRef.current[id] = e.target.value)}
-                            placeholder={field.label}
-                        />
-                    </div>
-                );
             case "date":
                 return (
                     <div className="mb-4" key={id}>
@@ -141,20 +158,27 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             {field.label} {requiredMark}
                         </label>
                         <input
-                            type="date"
+                            type={field.field_type}
                             className={commonClass}
+                            style={borderStyle}
                             onChange={(e) => (valuesRef.current[id] = e.target.value)}
+                            onBlur={() => handleBlur(field)}
+                            placeholder={field.label}
                         />
+                        {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
                     </div>
                 );
             case "file":
                 return (
-                    <FileInputCamera
-                        key={field.id}
-                        fieldId={field.id}
-                        label={field.label}
-                        fileRefs={fileRefs}
-                    />
+                    <div className="mb-4" key={id}>
+                        <FileInputCamera
+                            fieldId={field.id}
+                            label={field.label}
+                            fileRefs={fileRefs}
+                            hasError={showError}
+                        />
+                        {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
+                    </div>
                 );
             case "signature":
                 return (
@@ -162,9 +186,10 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                         <label className="block text-gray-700 font-medium mb-2">
                             {field.label} {requiredMark}
                         </label>
-                        <div className="border border-gray-300 rounded-md overflow-hidden bg-gray-50">
-                            <SignaturePad ref={signatureRef} />
+                        <div className="rounded-md overflow-hidden bg-gray-50" style={borderStyle}>
+                            <SignaturePad ref={signatureRef} onEnd={handleSignatureChange} />
                         </div>
+                        {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
                     </div>
                 );
             default:
@@ -174,15 +199,21 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                         <input
                             type="text"
                             className={commonClass}
+                            style={borderStyle}
                             onChange={(e) => (valuesRef.current[id] = e.target.value)}
+                            onBlur={() => handleBlur(field)}
                         />
+                        {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
                     </div>
                 );
         }
     }
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
+        <form
+            onSubmit={handleSubmit}
+            className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md"
+        >
             <h1 className="text-2xl font-semibold text-gray-800 mb-6">{form.name}</h1>
             <p className="text-gray-600 mb-6">{form.description}</p>
 
@@ -191,15 +222,29 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full py-2 rounded-md text-white font-medium transition ${submitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                className={`w-full py-2 rounded-md text-white font-medium transition ${submitting
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
                     }`}
             >
                 {submitting ? "Enviando..." : "Enviar"}
             </button>
 
-            {error && <div className="mt-4 text-red-600 bg-red-50 border border-red-200 p-3 rounded">{error}</div>}
-            {successMsg && <div className="mt-4 text-green-700 bg-green-50 border border-green-200 p-3 rounded">{successMsg}</div>}
+            {error && (
+                <div
+                    className="mt-4 border p-3 rounded"
+                    style={{ color: "#f6abab", borderColor: "#f6abab", backgroundColor: "#fff0f0" }}
+                >
+                    {error}
+                </div>
+            )}
+            {successMsg && (
+                <div className="mt-4 text-green-700 bg-green-50 border border-green-200 p-3 rounded">
+                    {successMsg}
+                </div>
+            )}
         </form>
     );
 }
+
 
