@@ -4,18 +4,19 @@ import { FaCamera, FaPaperclip, FaTimes, FaFilePdf, FaFileAlt } from "react-icon
 
 export interface FileItem {
     name: string;
-    src: string | null; // para preview
+    src: string | null;
     type: string | null;
-    file?: File; // el objeto File real
+    file?: File;
 }
 
 interface FileInputCameraProps {
     fieldId: number;
     label: string;
     fileRefs: React.MutableRefObject<Record<number, FileItem[]>>;
+    hasError?: boolean; // borde rojo opcional
 }
 
-const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileRefs }) => {
+const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileRefs, hasError }) => {
     const webcamRef = useRef<Webcam | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [files, setFiles] = useState<FileItem[]>([]);
@@ -87,24 +88,45 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
         <div className="w-full flex flex-col gap-2 mb-4">
             <label className="block text-gray-700 font-medium mb-1">{label}</label>
 
-            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
+            {/* Contenedor input visual con borde */}
+            <div
+                className={`flex items-center rounded-lg overflow-hidden shadow-sm bg-white`}
+                style={{
+                    border: hasError ? "1px solid #f6abab" : "1px solid #d1d5db"
+                }}
+            >
                 <div className="flex-grow px-3 py-2 text-gray-600 truncate">
                     {files.length === 0 ? "Seleccionar archivos" : `${files.length} archivo(s) seleccionado(s)`}
                 </div>
                 <div className="flex items-center bg-gray-50 border-l border-gray-200">
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 hover:bg-gray-100 transition">
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-3 hover:bg-gray-100 transition"
+                    >
                         <FaPaperclip className="text-gray-600 text-lg" />
                     </button>
-                    <button type="button" onClick={() => setShowCamera(true)} className="p-3 hover:bg-gray-100 transition">
+                    <button
+                        type="button"
+                        onClick={() => setShowCamera(true)}
+                        className="p-3 hover:bg-gray-100 transition"
+                    >
                         <FaCamera className="text-gray-600 text-lg" />
                     </button>
                 </div>
             </div>
 
-            <input ref={fileInputRef} type="file" accept="*" multiple onChange={handleFileChange} className="hidden" />
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+            />
 
             {showCamera && (
-                <div className="flex flex-col items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                <div className="flex flex-col items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 mt-2">
                     <Webcam
                         ref={webcamRef}
                         audio={false}
@@ -113,10 +135,16 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
                         className="rounded-lg w-full aspect-video bg-black"
                     />
                     <div className="flex gap-2 py-3">
-                        <button onClick={capture} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition">
+                        <button
+                            onClick={capture}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition"
+                        >
                             Capturar
                         </button>
-                        <button onClick={() => setShowCamera(false)} className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md transition">
+                        <button
+                            onClick={() => setShowCamera(false)}
+                            className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md transition"
+                        >
                             Cancelar
                         </button>
                     </div>
@@ -124,20 +152,27 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
             )}
 
             {files.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                     {files.map((file, idx) => (
-                        <div key={idx} className="relative w-32 h-32 border border-gray-300 rounded-lg shadow-sm overflow-hidden">
+                        <div
+                            key={idx}
+                            className="relative w-32 h-32 border border-gray-300 rounded-lg shadow-sm overflow-hidden"
+                        >
                             {file.type?.startsWith("image/") && file.src ? (
                                 <img src={file.src} alt={file.name} className="w-full h-full object-cover" />
                             ) : file.type === "application/pdf" ? (
                                 <div className="flex flex-col items-center justify-center w-full h-full text-red-600">
                                     <FaFilePdf className="text-5xl mb-1" />
-                                    <span className="text-xs text-gray-700 truncate w-28 text-center">{file.name}</span>
+                                    <span className="text-xs text-gray-700 truncate w-28 text-center">
+                                        {file.name}
+                                    </span>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center w-full h-full text-gray-600">
                                     <FaFileAlt className="text-4xl mb-1" />
-                                    <span className="text-xs text-gray-700 truncate w-28 text-center">{file.name}</span>
+                                    <span className="text-xs text-gray-700 truncate w-28 text-center">
+                                        {file.name}
+                                    </span>
                                 </div>
                             )}
 
@@ -157,3 +192,5 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({ fieldId, label, fileR
 };
 
 export default FileInputCamera;
+
+

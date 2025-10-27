@@ -63,7 +63,6 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
     }
 
-    // Para signature, marcar como touched al dibujar
     function handleSignatureChange() {
         const field = form.fields.find(f => f.field_type === "signature");
         if (!field) return;
@@ -77,6 +76,12 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setError(null);
         setSuccessMsg(null);
 
+        // Marcar todos los campos como touched
+        const allTouched: Record<number, boolean> = {};
+        form.fields.forEach(f => allTouched[f.id] = true);
+        setTouched(allTouched);
+
+        // Validar todos los campos
         const errors = validateAll();
         if (Object.keys(errors).length > 0) {
             setError("Faltan campos requeridos");
@@ -146,8 +151,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             "w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none";
 
         const showError = touched[id] && fieldErrors[id];
-
-        const borderStyle = showError ? { borderColor: "#f6abab" } : { borderColor: "#d1d5db" }; // Tailwind gray-300 default
+        const borderStyle = showError ? { borderColor: "#f6abab" } : { borderColor: "#d1d5db" };
 
         switch (field.field_type) {
             case "text":
@@ -210,10 +214,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     }
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md"
-        >
+        <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
             <h1 className="text-2xl font-semibold text-gray-800 mb-6">{form.name}</h1>
             <p className="text-gray-600 mb-6">{form.description}</p>
 
@@ -222,19 +223,13 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full py-2 rounded-md text-white font-medium transition ${submitting
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                    }`}
+                className={`w-full py-2 rounded-md text-white font-medium transition ${submitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
             >
                 {submitting ? "Enviando..." : "Enviar"}
             </button>
 
             {error && (
-                <div
-                    className="mt-4 border p-3 rounded"
-                    style={{ color: "#f6abab", borderColor: "#f6abab", backgroundColor: "#fff0f0" }}
-                >
+                <div className="mt-4 border p-3 rounded" style={{ color: "#f6abab", borderColor: "#f6abab", backgroundColor: "#fff0f0" }}>
                     {error}
                 </div>
             )}
@@ -246,5 +241,6 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         </form>
     );
 }
+
 
 
