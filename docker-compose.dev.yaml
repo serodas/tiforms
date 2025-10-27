@@ -20,13 +20,13 @@ services:
     build:
       context: ./frontend
       dockerfile: ./docker/Dockerfile.dev
-    command: npm run dev  # (solo para modo desarrollo)
+    command: npm run dev
     restart: unless-stopped
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - NEXT_PUBLIC_API_URL=http://tiforms-backend:8000
+      - NEXT_PUBLIC_API_BASE=http://tiforms-backend:8000/api
     ports:
       - "3000:3000"
     depends_on:
