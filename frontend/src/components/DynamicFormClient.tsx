@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import SignaturePad, { SignaturePadHandle } from "./SignaturePad";
 import "@/styles/form.css";
 import FileInputCamera, { FileItem } from "./FileInputCamera";
+import CheckboxField from "./CheckboxField";
 
 interface FormField {
     id: number;
@@ -39,6 +40,9 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             if (files.length === 0) return "Este campo es obligatorio";
         } else if (field.field_type === "signature") {
             if (!signatureRef.current?.isSigned()) return "La firma es obligatoria";
+        } else if (field.field_type === "checkbox") {
+            const val = valuesRef.current[field.id];
+            if (touched[field.id] && (!val || val === "")) return "Debes seleccionar una opción";
         } else {
             const val = valuesRef.current[field.id];
             if (!val) return "Este campo es obligatorio";
@@ -199,6 +203,27 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             />
                         </div>
                         {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
+                    </div>
+                );
+            case "checkbox":
+                return (
+                    <div key={id}>
+                        <CheckboxField
+                            fieldId={id}
+                            label={field.label}
+                            required={!!field.required}
+                            hasError={!!showError}
+                            defaultValue={valuesRef.current[id] || ""}
+                            onChange={(val) => {
+                                valuesRef.current[id] = val;
+                                handleBlur(field);
+                            }}
+                        />
+                        {showError && (
+                            <p className="text-sm mt-1" style={{ color: "#f6abab" }}>
+                                {fieldErrors[id]}
+                            </p>
+                        )}
                     </div>
                 );
             default:
