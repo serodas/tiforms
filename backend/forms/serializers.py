@@ -46,8 +46,8 @@ class FormSerializer(serializers.ModelSerializer):
             form_id = row[0]
             print("✅ FORM creado con ID:", form_id, flush=True)
 
-            # 2️⃣ Insertar o reutilizar los fields
             for ff_data in formfields_data:
+                name = ff_data.get("name")
                 label = ff_data.get("label")
                 field_type = ff_data.get("field_type")
                 required = 1 if ff_data.get("required", True) else 0
@@ -60,14 +60,10 @@ class FormSerializer(serializers.ModelSerializer):
 
                 if row:
                     formfield_id = row[0]
-                    print("🟢 Reutilizando FormField ID:", formfield_id, flush=True)
                 else:
-                    print("🟢LABEL:", label, flush=True)
-                    print("field_type:", field_type, flush=True)
-                    print("required:", required, flush=True)
                     cursor.execute(
-                        "INSERT INTO TIFORMS.FORMFIELD (LABEL, FIELD_TYPE, REQUIRED) VALUES (?, ?, ?)",
-                        [label, field_type, required],
+                        "INSERT INTO TIFORMS.FORMFIELD (NAME, LABEL, FIELD_TYPE, REQUIRED) VALUES (?, ?, ?, ?)",
+                        [name, label, field_type, required],
                     )
                     cursor.execute("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1")
                     row = cursor.fetchone()

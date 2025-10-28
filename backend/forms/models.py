@@ -10,6 +10,7 @@ class FormField(models.Model):
     ]
 
     id = models.AutoField(primary_key=True, db_column="ID")
+    name = models.CharField(max_length=200, db_column="NAME")
     label = models.CharField(max_length=200, db_column="LABEL")
     field_type = models.CharField(
         max_length=50, choices=FORM_FIELD_TYPES, db_column="FIELD_TYPE"
