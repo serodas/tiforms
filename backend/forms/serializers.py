@@ -66,8 +66,8 @@ class FormSerializer(serializers.ModelSerializer):
                     print("field_type:", field_type, flush=True)
                     print("required:", required, flush=True)
                     cursor.execute(
-                        "INSERT INTO TIFORMS.FORMFIELD (FORM_ID, LABEL, FIELD_TYPE, REQUIRED) VALUES (?, ?, ?, ?)",
-                        [form_id, label, field_type, required],
+                        "INSERT INTO TIFORMS.FORMFIELD (LABEL, FIELD_TYPE, REQUIRED) VALUES (?, ?, ?)",
+                        [label, field_type, required],
                     )
                     cursor.execute("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1")
                     row = cursor.fetchone()
