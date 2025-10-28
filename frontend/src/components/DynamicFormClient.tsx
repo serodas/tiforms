@@ -3,11 +3,11 @@
 import React, { useState, useRef } from "react";
 import SignaturePad, { SignaturePadHandle } from "./SignaturePad";
 import "@/styles/form.css";
-import { normalizeLabel } from "@/utils/utils";
 import FileInputCamera, { FileItem } from "./FileInputCamera";
 
 interface FormField {
     id: number;
+    name: string;
     label: string;
     field_type: string;
     required: number;
@@ -94,7 +94,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             fd.append("form_id", form.id.toString());
 
             for (const field of form.fields) {
-                const key = normalizeLabel(field.label);
+                const key = field.name;
 
                 if (field.field_type === "file") {
                     const files = fileRefs.current[field.id] || [];
