@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)  # <-- logger configurado
 class FormFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = FormField
-        fields = ["id", "label", "field_type", "required"]
+        fields = ["id", "name", "label", "field_type", "required"]
         validators = []
 
 

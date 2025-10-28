@@ -7,6 +7,7 @@ class FormField(models.Model):
         ("file", "Archivo"),
         ("signature", "Firma"),
         ("date", "Fecha"),
+        ("checkbox", "Checkbox"),
     ]
 
     id = models.AutoField(primary_key=True, db_column="ID")
