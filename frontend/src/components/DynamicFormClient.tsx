@@ -33,6 +33,8 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
     const [touched, setTouched] = useState<Record<number, boolean>>({});
+    const [resetTrigger, setResetTrigger] = useState(0);
+
 
     const valuesRef = useRef<Record<number, string>>({});
     const fileRefs = useRef<Record<number, FileItem[]>>({});
@@ -83,10 +85,10 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        const formEl = e.currentTarget;
         setError(null);
         setSuccessMsg(null);
 
-        // Marcar todos los campos como touched
         const allTouched: Record<number, boolean> = {};
         form.fields.forEach(f => allTouched[f.id] = true);
         setTouched(allTouched);
@@ -132,12 +134,13 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             if (!res.ok) throw new Error("Error al enviar formulario");
 
             setSuccessMsg("✅ Formulario enviado correctamente");
-            e.currentTarget.reset();
+            formEl.reset();
             signatureRef.current?.clear();
             valuesRef.current = {};
             fileRefs.current = {};
             setFieldErrors({});
             setTouched({});
+            setResetTrigger((prev) => prev + 1);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -191,6 +194,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             fileRefs={fileRefs}
                             hasError={!!showError}
                             required={!!field.required}
+                            resetTrigger={resetTrigger}
                         />
                         {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
                     </div>
@@ -204,8 +208,8 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                         <div className="rounded-md overflow-hidden bg-gray-50" style={borderStyle}>
                             <SignaturePad
                                 ref={signatureRef}
-                                onEnd={handleSignatureChange}
-                                hasError={showError}
+                                hasError={!!showError}
+                                resetTrigger={resetTrigger}
                             />
                         </div>
                         {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}

@@ -1,6 +1,15 @@
+"use client";
+
 import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
-import { FaCamera, FaPaperclip, FaTimes, FaFilePdf, FaFileAlt, FaSearch } from "react-icons/fa";
+import {
+    FaCamera,
+    FaPaperclip,
+    FaTimes,
+    FaFilePdf,
+    FaFileAlt,
+    FaSearch,
+} from "react-icons/fa";
 
 export interface FileItem {
     name: string;
@@ -15,14 +24,16 @@ interface FileInputCameraProps {
     fileRefs: React.MutableRefObject<Record<number, FileItem[]>>;
     hasError?: boolean;
     required?: boolean;
+    resetTrigger?: number;
 }
 
 const FileInputCamera: React.FC<FileInputCameraProps> = ({
     fieldId,
     label,
     fileRefs,
-    hasError,
-    required,
+    hasError = false,
+    required = false,
+    resetTrigger = 0,
 }) => {
     const webcamRef = useRef<Webcam | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -31,9 +42,16 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
     const [zoomImage, setZoomImage] = useState<string | null>(null);
 
     useEffect(() => {
-        const currentFiles = fileRefs.current[fieldId] || [];
-        setFiles(currentFiles);
-    }, [fileRefs, fieldId]);
+        setFiles([]);
+        fileRefs.current[fieldId] = [];
+        setShowCamera(false);
+        setZoomImage(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }, [resetTrigger, fieldId, fileRefs]);
+
+    useEffect(() => {
+        fileRefs.current[fieldId] = files;
+    }, [files, fieldId, fileRefs]);
 
     function dataURLtoBlob(dataurl: string): Blob {
         const [header, data] = dataurl.split(",");
@@ -44,7 +62,6 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
         return new Blob([array], { type: mime });
     }
 
-    // Captura la imagen completa de la cámara sin recortes
     const capture = () => {
         const video = webcamRef.current?.video;
         if (!video) return;
@@ -52,62 +69,51 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
         const imageSrc = canvas.toDataURL("image/jpeg", 1);
         const blob = dataURLtoBlob(imageSrc);
         const file = new File([blob], "captura.jpg", { type: "image/jpeg" });
-        const newFile: FileItem = { name: file.name, src: imageSrc, type: file.type, file };
-
-        const updatedFiles = [...files, newFile];
-        setFiles(updatedFiles);
-        fileRefs.current[fieldId] = updatedFiles;
+        addFile({ name: file.name, src: imageSrc, type: file.type, file });
         setShowCamera(false);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFiles = e.target.files;
-        if (!selectedFiles) return;
+        const selected = e.target.files;
+        if (!selected) return;
 
-        Array.from(selectedFiles).forEach((f) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const fileItem: FileItem = {
-                    name: f.name,
-                    src: reader.result as string,
-                    type: f.type,
-                    file: f,
-                };
-                const updatedFiles = [...files, fileItem];
-                setFiles(updatedFiles);
-                fileRefs.current[fieldId] = updatedFiles;
-            };
-
+        Array.from(selected).forEach((f) => {
             if (f.type.startsWith("image/") || f.type === "application/pdf") {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    addFile({
+                        name: f.name,
+                        src: reader.result as string,
+                        type: f.type,
+                        file: f,
+                    });
+                };
                 reader.readAsDataURL(f);
             } else {
-                const fileItem: FileItem = { name: f.name, src: null, type: f.type, file: f };
-                const updatedFiles = [...files, fileItem];
-                setFiles(updatedFiles);
-                fileRefs.current[fieldId] = updatedFiles;
+                addFile({ name: f.name, src: null, type: f.type, file: f });
             }
         });
 
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
+    const addFile = (file: FileItem) => setFiles((prev) => [...prev, file]);
+
     const removeFile = (index: number) => {
-        const updatedFiles = files.filter((_, i) => i !== index);
-        setFiles(updatedFiles);
-        fileRefs.current[fieldId] = updatedFiles;
+        setFiles((prev) => prev.filter((_, i) => i !== index));
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const requiredMark = required ? <span className="text-red-500">*</span> : null;
+    const requiredMark = required ? (
+        <span className="text-red-500">*</span>
+    ) : null;
 
     return (
         <div className="w-full flex flex-col gap-2 mb-4">
@@ -117,7 +123,11 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
 
             <div
                 className="flex items-center rounded-lg overflow-hidden shadow-sm bg-white w-full h-18"
-                style={{ border: hasError ? "1px dashed #f6abab" : "1px dashed #d1d5db" }}
+                style={{
+                    border: hasError
+                        ? "1px dashed #f6abab"
+                        : "1px dashed #d1d5db",
+                }}
             >
                 <div className="flex-grow px-3 py-2 text-gray-600 truncate">
                     {files.length === 0
@@ -129,6 +139,7 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className="p-3 hover:bg-gray-100 transition"
+                        title="Subir archivo"
                     >
                         <FaPaperclip className="text-gray-600 text-lg" />
                     </button>
@@ -136,6 +147,7 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                         type="button"
                         onClick={() => setShowCamera(true)}
                         className="p-3 hover:bg-gray-100 transition"
+                        title="Usar cámara"
                     >
                         <FaCamera className="text-gray-600 text-lg" />
                     </button>
@@ -159,13 +171,16 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
 
             {showCamera && (
                 <div className="flex flex-col items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 mt-2">
-                    {/* Contenedor con proporción que coincide con la cámara */}
-                    <div className="w-full" style={{ aspectRatio: '16/9' }}>
+                    <div className="w-full" style={{ aspectRatio: "16/9" }}>
                         <Webcam
                             ref={webcamRef}
                             audio={false}
                             screenshotFormat="image/jpeg"
-                            videoConstraints={{ facingMode: "environment", width: 1920, height: 1080 }}
+                            videoConstraints={{
+                                facingMode: "environment",
+                                width: 1920,
+                                height: 1080,
+                            }}
                             className="w-full h-full object-contain bg-black rounded-lg"
                         />
                     </div>
@@ -201,19 +216,17 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                                     className="w-full h-full object-contain rounded"
                                 />
                             ) : file.type === "application/pdf" ? (
-                                <div className="flex flex-col items-center justify-center w-full h-full text-red-600">
-                                    <FaFilePdf className="text-3xl mb-1" />
-                                </div>
+                                <FaFilePdf className="text-3xl text-red-600" />
                             ) : (
-                                <div className="flex flex-col items-center justify-center w-full h-full text-gray-600">
-                                    <FaFileAlt className="text-3xl mb-1" />
-                                </div>
+                                <FaFileAlt className="text-3xl text-gray-600" />
                             )}
 
-                            <div className="text-xs text-gray-700 text-center mt-1 flex flex-col">
+                            <div className="text-xs text-gray-700 text-center mt-1">
                                 <span className="truncate">{file.name}</span>
                                 {file.file?.size && (
-                                    <span className="text-gray-500">{(file.file.size / 1024).toFixed(1)} KB</span>
+                                    <span className="text-gray-500">
+                                        {(file.file.size / 1024).toFixed(1)} KB
+                                    </span>
                                 )}
                             </div>
 
@@ -255,3 +268,4 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
 };
 
 export default FileInputCamera;
+
