@@ -22,40 +22,66 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
     label,
     fileRefs,
     hasError,
-    required
+    required,
 }) => {
     const webcamRef = useRef<Webcam | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [files, setFiles] = useState<FileItem[]>([]);
     const [showCamera, setShowCamera] = useState(false);
-    const [zoomImage, setZoomImage] = useState<string | null>(null); // Para modal de zoom
+    const [zoomImage, setZoomImage] = useState<string | null>(null);
 
     useEffect(() => {
         const currentFiles = fileRefs.current[fieldId] || [];
         setFiles(currentFiles);
     }, [fileRefs, fieldId]);
 
+    function dataURLtoBlob(dataurl: string): Blob {
+        const [header, data] = dataurl.split(",");
+        const mime = header.match(/:(.*?);/)?.[1] || "image/png";
+        const binary = atob(data);
+        const array = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+        return new Blob([array], { type: mime });
+    }
+
+    // Captura la imagen completa de la cámara sin recortes
     const capture = () => {
-        const imageSrc = webcamRef.current?.getScreenshot();
-        if (imageSrc) {
-            const blob = dataURLtoBlob(imageSrc);
-            const file = new File([blob], "captura.jpg", { type: "image/jpeg" });
-            const newFile: FileItem = { name: file.name, src: imageSrc, type: file.type, file };
-            const updatedFiles = [...files, newFile];
-            setFiles(updatedFiles);
-            fileRefs.current[fieldId] = updatedFiles;
-            setShowCamera(false);
-        }
+        const video = webcamRef.current?.video;
+        if (!video) return;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageSrc = canvas.toDataURL("image/jpeg", 1);
+        const blob = dataURLtoBlob(imageSrc);
+        const file = new File([blob], "captura.jpg", { type: "image/jpeg" });
+        const newFile: FileItem = { name: file.name, src: imageSrc, type: file.type, file };
+
+        const updatedFiles = [...files, newFile];
+        setFiles(updatedFiles);
+        fileRefs.current[fieldId] = updatedFiles;
+        setShowCamera(false);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFiles = e.target.files;
         if (!selectedFiles) return;
 
-        Array.from(selectedFiles).forEach(f => {
+        Array.from(selectedFiles).forEach((f) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                const fileItem: FileItem = { name: f.name, src: reader.result as string, type: f.type, file: f };
+                const fileItem: FileItem = {
+                    name: f.name,
+                    src: reader.result as string,
+                    type: f.type,
+                    file: f,
+                };
                 const updatedFiles = [...files, fileItem];
                 setFiles(updatedFiles);
                 fileRefs.current[fieldId] = updatedFiles;
@@ -78,18 +104,8 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
         const updatedFiles = files.filter((_, i) => i !== index);
         setFiles(updatedFiles);
         fileRefs.current[fieldId] = updatedFiles;
-
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
-
-    function dataURLtoBlob(dataurl: string): Blob {
-        const [header, data] = dataurl.split(",");
-        const mime = header.match(/:(.*?);/)?.[1] || "image/png";
-        const binary = atob(data);
-        const array = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
-        return new Blob([array], { type: mime });
-    }
 
     const requiredMark = required ? <span className="text-red-500">*</span> : null;
 
@@ -104,7 +120,9 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                 style={{ border: hasError ? "1px dashed #f6abab" : "1px dashed #d1d5db" }}
             >
                 <div className="flex-grow px-3 py-2 text-gray-600 truncate">
-                    {files.length === 0 ? "Seleccionar archivos" : `${files.length} archivo(s) seleccionado(s)`}
+                    {files.length === 0
+                        ? "Seleccionar archivos"
+                        : `${files.length} archivo(s) seleccionado(s)`}
                 </div>
                 <div className="flex items-center">
                     <button
@@ -141,13 +159,16 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
 
             {showCamera && (
                 <div className="flex flex-col items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 mt-2">
-                    <Webcam
-                        ref={webcamRef}
-                        audio={false}
-                        screenshotFormat="image/jpeg"
-                        videoConstraints={{ facingMode: "environment" }}
-                        className="rounded-lg w-full aspect-video bg-black"
-                    />
+                    {/* Contenedor con proporción que coincide con la cámara */}
+                    <div className="w-full" style={{ aspectRatio: '16/9' }}>
+                        <Webcam
+                            ref={webcamRef}
+                            audio={false}
+                            screenshotFormat="image/jpeg"
+                            videoConstraints={{ facingMode: "environment", width: 1920, height: 1080 }}
+                            className="w-full h-full object-contain bg-black rounded-lg"
+                        />
+                    </div>
                     <div className="flex gap-2 py-3">
                         <button
                             onClick={capture}
@@ -174,7 +195,11 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                             onClick={() => file.src && setZoomImage(file.src)}
                         >
                             {file.type?.startsWith("image/") && file.src ? (
-                                <img src={file.src} alt={file.name} className="w-full h-full object-cover rounded" />
+                                <img
+                                    src={file.src}
+                                    alt={file.name}
+                                    className="w-full h-full object-contain rounded"
+                                />
                             ) : file.type === "application/pdf" ? (
                                 <div className="flex flex-col items-center justify-center w-full h-full text-red-600">
                                     <FaFilePdf className="text-3xl mb-1" />
@@ -192,7 +217,6 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                                 )}
                             </div>
 
-                            {/* Lupa de hover */}
                             {file.src && (
                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                     <FaSearch className="text-white text-xl" />
@@ -214,13 +238,16 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                 </div>
             )}
 
-            {/* Modal de zoom */}
             {zoomImage && (
                 <div
                     className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
                     onClick={() => setZoomImage(null)}
                 >
-                    <img src={zoomImage} className="max-h-[90%] max-w-[90%] rounded-lg shadow-lg" alt="Zoom" />
+                    <img
+                        src={zoomImage}
+                        className="max-h-[90%] max-w-[90%] rounded-lg shadow-lg"
+                        alt="Zoom"
+                    />
                 </div>
             )}
         </div>
@@ -228,4 +255,3 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
 };
 
 export default FileInputCamera;
-
