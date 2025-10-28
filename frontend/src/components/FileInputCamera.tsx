@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
-import { FaCamera, FaPaperclip, FaTimes, FaFilePdf, FaFileAlt } from "react-icons/fa";
+import { FaCamera, FaPaperclip, FaTimes, FaFilePdf, FaFileAlt, FaSearch } from "react-icons/fa";
 
 export interface FileItem {
     name: string;
@@ -28,6 +28,7 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [files, setFiles] = useState<FileItem[]>([]);
     const [showCamera, setShowCamera] = useState(false);
+    const [zoomImage, setZoomImage] = useState<string | null>(null); // Para modal de zoom
 
     useEffect(() => {
         const currentFiles = fileRefs.current[fieldId] || [];
@@ -169,28 +170,40 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                     {files.map((file, idx) => (
                         <div
                             key={idx}
-                            className="relative w-32 h-32 border border-gray-300 rounded-lg shadow-sm overflow-hidden"
+                            className="relative w-28 h-28 border border-gray-300 rounded-lg shadow-sm overflow-hidden flex flex-col items-center justify-center p-2 cursor-pointer group"
+                            onClick={() => file.src && setZoomImage(file.src)}
                         >
                             {file.type?.startsWith("image/") && file.src ? (
-                                <img src={file.src} alt={file.name} className="w-full h-full object-cover" />
+                                <img src={file.src} alt={file.name} className="w-full h-full object-cover rounded" />
                             ) : file.type === "application/pdf" ? (
                                 <div className="flex flex-col items-center justify-center w-full h-full text-red-600">
-                                    <FaFilePdf className="text-5xl mb-1" />
-                                    <span className="text-xs text-gray-700 truncate w-28 text-center">
-                                        {file.name}
-                                    </span>
+                                    <FaFilePdf className="text-3xl mb-1" />
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center w-full h-full text-gray-600">
-                                    <FaFileAlt className="text-4xl mb-1" />
-                                    <span className="text-xs text-gray-700 truncate w-28 text-center">
-                                        {file.name}
-                                    </span>
+                                    <FaFileAlt className="text-3xl mb-1" />
+                                </div>
+                            )}
+
+                            <div className="text-xs text-gray-700 text-center mt-1 flex flex-col">
+                                <span className="truncate">{file.name}</span>
+                                {file.file?.size && (
+                                    <span className="text-gray-500">{(file.file.size / 1024).toFixed(1)} KB</span>
+                                )}
+                            </div>
+
+                            {/* Lupa de hover */}
+                            {file.src && (
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                    <FaSearch className="text-white text-xl" />
                                 </div>
                             )}
 
                             <button
-                                onClick={() => removeFile(idx)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeFile(idx);
+                                }}
                                 className="absolute top-1 right-1 bg-white/80 hover:bg-red-500 hover:text-white text-gray-700 rounded-full p-1 shadow-md transition"
                                 title="Eliminar archivo"
                             >
@@ -200,10 +213,19 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                     ))}
                 </div>
             )}
+
+            {/* Modal de zoom */}
+            {zoomImage && (
+                <div
+                    className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+                    onClick={() => setZoomImage(null)}
+                >
+                    <img src={zoomImage} className="max-h-[90%] max-w-[90%] rounded-lg shadow-lg" alt="Zoom" />
+                </div>
+            )}
         </div>
     );
 };
 
 export default FileInputCamera;
-
 
