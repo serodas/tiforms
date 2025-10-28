@@ -1,16 +1,23 @@
 import os
 import logging
 from rest_framework import serializers
-from .models import Form, FormField, FormFieldForm, FormSubmission
-from dbal.ibmi.base import DatabaseWrapper
+from .models import Form, FormField, FormFieldForm, FormFieldOption, FormSubmission
 
 logger = logging.getLogger(__name__)  # <-- logger configurado
 
 
+class FormFieldOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FormFieldOption
+        fields = ["id", "value", "label", "order"]
+
+
 class FormFieldSerializer(serializers.ModelSerializer):
+    options = FormFieldOptionSerializer(many=True, required=False)
+
     class Meta:
         model = FormField
-        fields = ["id", "name", "label", "field_type", "required"]
+        fields = ["id", "name", "label", "field_type", "required", "options"]
         validators = []
 
 
@@ -51,6 +58,7 @@ class FormSerializer(serializers.ModelSerializer):
                 label = ff_data.get("label")
                 field_type = ff_data.get("field_type")
                 required = 1 if ff_data.get("required", True) else 0
+                options_data = ff_data.get("options", [])
 
                 cursor.execute(
                     "SELECT ID FROM TIFORMS.FORMFIELD WHERE LABEL = ? AND FIELD_TYPE = ? AND REQUIRED = ?",
@@ -74,6 +82,16 @@ class FormSerializer(serializers.ModelSerializer):
                         )
                     formfield_id = row[0]
                     print("🆕 FormField creado con ID:", formfield_id, flush=True)
+
+                if field_type == "checkbox" and options_data:
+                    for opt in options_data:
+                        value = opt.get("value")
+                        label_opt = opt.get("label")
+                        order = opt.get("order", 0)
+                        cursor.execute(
+                            "INSERT INTO TIFORMS.FORMFIELDOPTION (FORMFIELD_ID, VALUE, LABEL, ORDER) VALUES (?, ?, ?, ?)",
+                            [formfield_id, value, label_opt, order],
+                        )
 
                 cursor.execute(
                     "SELECT 1 FROM TIFORMS.FORM_FORMFIELDS WHERE FORM_ID = ? AND FORMFIELD_ID = ?",

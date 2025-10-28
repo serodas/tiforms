@@ -1,6 +1,11 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Check } from "lucide-react";
+
+interface Option {
+    label: string;
+    value: string;
+}
 
 interface CheckboxFieldProps {
     fieldId: number;
@@ -8,6 +13,7 @@ interface CheckboxFieldProps {
     required?: boolean;
     hasError?: boolean;
     defaultValue?: string;
+    options?: Option[];
     onChange?: (value: string) => void;
 }
 
@@ -17,18 +23,18 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
     required,
     hasError,
     defaultValue = "",
+    options = [
+        { label: "SI", value: "SI" },
+        { label: "NO", value: "NO" },
+    ],
     onChange,
 }) => {
     const [selected, setSelected] = useState(defaultValue);
 
-    const options = [
-        { label: "SI", value: "SI" },
-        { label: "NO", value: "NO" },
-    ];
-
-    useEffect(() => {
-        onChange?.(selected);
-    }, [selected]);
+    const handleSelect = (value: string) => {
+        setSelected(value);
+        onChange?.(value);
+    };
 
     return (
         <div className="mb-4">
@@ -36,16 +42,15 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
 
-            <div className="sideBySide flex gap-4">
+            <div className="sideBySide flex gap-4 flex-wrap">
                 {options.map((opt) => (
                     <span
                         key={opt.value}
-                        onClick={() => setSelected(opt.value)}
+                        onClick={() => handleSelect(opt.value)}
                         className={`relative flex items-center justify-center w-28 h-12 border rounded-2xl cursor-pointer transition-all
                             ${selected === opt.value
                                 ? "bg-blue-100 border-blue-500 shadow-md"
-                                : "bg-white border-gray-300 hover:border-blue-300"
-                            }
+                                : "bg-white border-gray-300 hover:border-blue-300"}
                             ${hasError ? "border-red-500" : ""}
                         `}
                     >

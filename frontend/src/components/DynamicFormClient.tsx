@@ -6,12 +6,18 @@ import "@/styles/form.css";
 import FileInputCamera, { FileItem } from "./FileInputCamera";
 import CheckboxField from "./CheckboxField";
 
+interface Option {
+    label: string;
+    value: string;
+}
+
 interface FormField {
     id: number;
     name: string;
     label: string;
     field_type: string;
     required: number;
+    options?: Option[];
 }
 
 interface FormData {
@@ -214,6 +220,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             required={!!field.required}
                             hasError={!!showError}
                             defaultValue={valuesRef.current[id] || ""}
+                            options={field.options || []}
                             onChange={(val) => {
                                 valuesRef.current[id] = val;
                                 handleBlur(field);

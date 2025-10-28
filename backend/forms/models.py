@@ -27,6 +27,11 @@ class FormField(models.Model):
     def __str__(self):
         return f"Campo: {self.label} ({self.field_type})"
 
+    @property
+    def has_options(self):
+        opts = getattr(self, "options", None)
+        return self.field_type == "checkbox" and opts and opts.exists()
+
 
 class Form(models.Model):
     id = models.AutoField(primary_key=True, db_column="ID")
@@ -70,3 +75,24 @@ class FormSubmission(models.Model):
 
     def __str__(self):
         return f"Respuesta al formulario {self.form.name}"
+
+
+class FormFieldOption(models.Model):
+    id = models.AutoField(primary_key=True, db_column="ID")
+    formfield = models.ForeignKey(
+        "FormField",
+        db_column="FORMFIELD_ID",
+        on_delete=models.CASCADE,
+        related_name="options",
+    )
+    value = models.CharField(max_length=200, db_column="VALUE")
+    label = models.CharField(max_length=200, db_column="LABEL")
+    order = models.PositiveSmallIntegerField(default=0, db_column="ORDER")
+
+    class Meta:
+        db_table = '"TIFORMS"."FORMFIELDOPTION"'
+        managed = False
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"Opción: {self.label} ({self.formfield.label})"
