@@ -79,7 +79,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             if (!signatureRef.current?.isSigned()) return "La firma es obligatoria";
         } else if (field.field_type === "checkbox") {
             const val = valuesRef.current[field.id];
-            if (touched[field.id] && (!val || val === "")) return "Debes seleccionar una opción";
+            if (!val || val === "") return "Debes seleccionar una opción";
         } else {
             const val = valuesRef.current[field.id];
             if (!val) return "Este campo es obligatorio";
