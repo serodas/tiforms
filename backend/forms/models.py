@@ -19,6 +19,17 @@ class FormField(models.Model):
     required = models.SmallIntegerField(default=1, db_column="REQUIRED")
     created_at = models.DateTimeField(auto_now_add=True, db_column="CREATED_AT")
 
+    depends_on = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        db_column="DEPENDS_ON",
+        help_text="Nombre del campo del que depende",
+    )
+    depends_value = models.CharField(
+        max_length=200, blank=True, null=True, db_column="DEPENDS_VALUE"
+    )
+
     class Meta:
         db_table = '"TIFORMS"."FORMFIELD"'
         managed = False
@@ -31,6 +42,11 @@ class FormField(models.Model):
     def has_options(self):
         opts = getattr(self, "options", None)
         return self.field_type == "checkbox" and opts and opts.exists()
+
+    def is_active(self, submission_data):
+        if not self.depends_on:
+            return True
+        return submission_data.get(self.depends_on) == self.depends_value
 
 
 class Form(models.Model):

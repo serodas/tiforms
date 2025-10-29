@@ -2,6 +2,7 @@ from django.db.backends.base.operations import BaseDatabaseOperations
 
 
 class DatabaseOperations(BaseDatabaseOperations):
+    paramstyle = "qmark"
     compiler_module = "django.db.models.sql.compiler"
     # Diccionario obligatorio para lookups (filtros de Django)
     operators = {

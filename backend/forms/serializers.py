@@ -1,19 +1,26 @@
 import os
+import sys
+import traceback
 import logging
+
+from dbal.ibmi.base import DatabaseWrapper
 from rest_framework import serializers
 from .models import Form, FormField, FormFieldForm, FormFieldOption, FormSubmission
 
-logger = logging.getLogger(__name__)  # <-- logger configurado
+logger = logging.getLogger("forms")
 
 
 class FormFieldOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = FormFieldOption
-        fields = ["id", "value", "label", "order"]
+        fields = ["id", "value", "order"]
+        extra_kwargs = {
+            "id": {"required": False},
+        }
 
 
 class FormFieldSerializer(serializers.ModelSerializer):
-    options = FormFieldOptionSerializer(many=True, required=False)
+    options = FormFieldOptionSerializer(many=True, read_only=True)
 
     class Meta:
         model = FormField
@@ -33,7 +40,6 @@ class FormSerializer(serializers.ModelSerializer):
         formfields_data = validated_data.pop("fields", [])
 
         dsn = os.getenv("DB2_DSN")
-        from dbal.ibmi.base import DatabaseWrapper
 
         db = DatabaseWrapper({"NAME": dsn})
         cursor = db.create_cursor()
@@ -59,6 +65,8 @@ class FormSerializer(serializers.ModelSerializer):
                 field_type = ff_data.get("field_type")
                 required = 1 if ff_data.get("required", True) else 0
                 options_data = ff_data.get("options", [])
+                depends_on_id = ff_data.get("depends_on")
+                depends_value = ff_data.get("depends_value")
 
                 cursor.execute(
                     "SELECT ID FROM TIFORMS.FORMFIELD WHERE LABEL = ? AND FIELD_TYPE = ? AND REQUIRED = ?",
@@ -70,8 +78,15 @@ class FormSerializer(serializers.ModelSerializer):
                     formfield_id = row[0]
                 else:
                     cursor.execute(
-                        "INSERT INTO TIFORMS.FORMFIELD (NAME, LABEL, FIELD_TYPE, REQUIRED) VALUES (?, ?, ?, ?)",
-                        [name, label, field_type, required],
+                        "INSERT INTO TIFORMS.FORMFIELD (NAME, LABEL, FIELD_TYPE, REQUIRED, DEPENDS_ON, DEPENDS_VALUE) VALUES (?, ?, ?, ?, ?, ?)",
+                        [
+                            name,
+                            label,
+                            field_type,
+                            required,
+                            depends_on_id,
+                            depends_value,
+                        ],
                     )
                     cursor.execute("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1")
                     row = cursor.fetchone()
