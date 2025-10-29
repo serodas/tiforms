@@ -24,7 +24,16 @@ class FormFieldSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FormField
-        fields = ["id", "name", "label", "field_type", "required", "options"]
+        fields = [
+            "id",
+            "name",
+            "label",
+            "field_type",
+            "required",
+            "options",
+            "depends_on",
+            "depends_value",
+        ]
         validators = []
 
     def create(self, validated_data):
