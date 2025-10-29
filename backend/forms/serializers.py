@@ -20,12 +20,38 @@ class FormFieldOptionSerializer(serializers.ModelSerializer):
 
 
 class FormFieldSerializer(serializers.ModelSerializer):
-    options = FormFieldOptionSerializer(many=True, read_only=True)
+    options = FormFieldOptionSerializer(many=True, required=False)
 
     class Meta:
         model = FormField
         fields = ["id", "name", "label", "field_type", "required", "options"]
         validators = []
+
+    def create(self, validated_data):
+        options_data = validated_data.pop("options", [])
+
+        form_field = FormField.objects.create(**validated_data)
+
+        for option_data in options_data:
+            form_field.options.create(**option_data)
+
+        return form_field
+
+    def update(self, instance, validated_data):
+        options_data = validated_data.pop("options", [])
+
+        instance.name = validated_data.get("name", instance.name)
+        instance.label = validated_data.get("label", instance.label)
+        instance.field_type = validated_data.get("field_type", instance.field_type)
+        instance.required = validated_data.get("required", instance.required)
+        instance.save()
+
+        if options_data is not None:
+            instance.options.all().delete()
+            for option_data in options_data:
+                instance.options.create(**option_data)
+
+        return instance
 
 
 class FormSerializer(serializers.ModelSerializer):
