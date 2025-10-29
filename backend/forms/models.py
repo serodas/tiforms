@@ -8,6 +8,8 @@ class FormField(models.Model):
         ("signature", "Firma"),
         ("date", "Fecha"),
         ("checkbox", "Checkbox"),
+        ("select", "Lista Desplegable"),
+        ("radio", "Lista seleccion unica"),
     ]
 
     id = models.AutoField(primary_key=True, db_column="ID")
