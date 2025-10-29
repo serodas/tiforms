@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import SignaturePad, { SignaturePadHandle } from "./SignaturePad";
 import "@/styles/form.css";
 import FileInputCamera, { FileItem } from "./FileInputCamera";
@@ -18,6 +18,8 @@ interface FormField {
     field_type: string;
     required: number;
     options?: Option[];
+    depends_on?: string | null;
+    depends_value?: string | null;
 }
 
 interface FormData {
@@ -34,13 +36,40 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     const [fieldErrors, setFieldErrors] = useState<Record<number, string>>({});
     const [touched, setTouched] = useState<Record<number, boolean>>({});
     const [resetTrigger, setResetTrigger] = useState(0);
-
+    const [visibleFields, setVisibleFields] = useState<Set<number>>(new Set());
 
     const valuesRef = useRef<Record<number, string>>({});
     const fileRefs = useRef<Record<number, FileItem[]>>({});
     const signatureRef = useRef<SignaturePadHandle | null>(null);
 
+    // Función para determinar si un campo debe ser visible
+    const shouldShowField = (field: FormField): boolean => {
+        if (!field.depends_on) return true;
+
+        const dependentField = form.fields.find(f => f.name === field.depends_on);
+        if (!dependentField) return true;
+
+        const dependentValue = valuesRef.current[dependentField.id];
+        return dependentValue === field.depends_value;
+    };
+
+    // Actualizar campos visibles cuando cambian los valores
+    useEffect(() => {
+        const newVisibleFields = new Set<number>();
+
+        form.fields.forEach(field => {
+            if (shouldShowField(field)) {
+                newVisibleFields.add(field.id);
+            }
+        });
+
+        setVisibleFields(newVisibleFields);
+    }, [valuesRef.current, form.fields]);
+
     function validateField(field: FormField) {
+        // No validar campos que no son visibles
+        if (!visibleFields.has(field.id)) return "";
+
         if (!field.required) return "";
 
         if (field.field_type === "file") {
@@ -62,8 +91,11 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     function validateAll(): Record<number, string> {
         const errors: Record<number, string> = {};
         for (const field of form.fields) {
-            const err = validateField(field);
-            if (err) errors[field.id] = err;
+            // Solo validar campos visibles
+            if (visibleFields.has(field.id)) {
+                const err = validateField(field);
+                if (err) errors[field.id] = err;
+            }
         }
         setFieldErrors(errors);
         return errors;
@@ -83,6 +115,25 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
     }
 
+    // Función para manejar cambios en campos que podrían afectar a otros campos
+    const handleFieldChange = (fieldId: number, value: string) => {
+        valuesRef.current[fieldId] = value;
+
+        // Si este campo tiene dependientes, actualizar la visibilidad
+        const hasDependents = form.fields.some(f => f.depends_on === form.fields.find(f => f.id === fieldId)?.name);
+        if (hasDependents) {
+            const newVisibleFields = new Set<number>();
+
+            form.fields.forEach(field => {
+                if (shouldShowField(field)) {
+                    newVisibleFields.add(field.id);
+                }
+            });
+
+            setVisibleFields(newVisibleFields);
+        }
+    };
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const formEl = e.currentTarget;
@@ -90,10 +141,14 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setSuccessMsg(null);
 
         const allTouched: Record<number, boolean> = {};
-        form.fields.forEach(f => allTouched[f.id] = true);
+        form.fields.forEach(f => {
+            if (visibleFields.has(f.id)) {
+                allTouched[f.id] = true;
+            }
+        });
         setTouched(allTouched);
 
-        // Validar todos los campos
+        // Validar solo los campos visibles
         const errors = validateAll();
         if (Object.keys(errors).length > 0) {
             setError("Faltan campos requeridos");
@@ -106,6 +161,9 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             fd.append("form_id", form.id.toString());
 
             for (const field of form.fields) {
+                // Solo incluir campos visibles en el envío
+                if (!visibleFields.has(field.id)) continue;
+
                 const key = field.name;
 
                 if (field.field_type === "file") {
@@ -141,6 +199,9 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             setFieldErrors({});
             setTouched({});
             setResetTrigger((prev) => prev + 1);
+
+            // Resetear campos visibles
+            setVisibleFields(new Set(form.fields.map(f => f.id)));
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -158,6 +219,9 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
     }
 
     function renderField(field: FormField) {
+        // No renderizar campos que no son visibles
+        if (!visibleFields.has(field.id)) return null;
+
         const id = field.id;
         const requiredMark = field.required ? <span className="text-red-500">*</span> : null;
         const commonClass =
@@ -178,7 +242,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             type={field.field_type}
                             className={commonClass}
                             style={borderStyle}
-                            onChange={(e) => (valuesRef.current[id] = e.target.value)}
+                            onChange={(e) => handleFieldChange(id, e.target.value)}
                             onBlur={() => handleBlur(field)}
                             placeholder={field.label}
                         />
@@ -226,7 +290,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             defaultValue={valuesRef.current[id] || ""}
                             options={field.options || []}
                             onChange={(val) => {
-                                valuesRef.current[id] = val;
+                                handleFieldChange(id, val);
                                 handleBlur(field);
                             }}
                         />
@@ -245,7 +309,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             type="text"
                             className={commonClass}
                             style={borderStyle}
-                            onChange={(e) => (valuesRef.current[id] = e.target.value)}
+                            onChange={(e) => handleFieldChange(id, e.target.value)}
                             onBlur={() => handleBlur(field)}
                         />
                         {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
