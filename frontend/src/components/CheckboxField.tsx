@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 
 interface Option {
@@ -15,6 +15,7 @@ interface CheckboxFieldProps {
     defaultValue?: string;
     options?: Option[];
     onChange?: (value: string) => void;
+    resetTrigger?: number;
 }
 
 const CheckboxField: React.FC<CheckboxFieldProps> = ({
@@ -28,6 +29,7 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
         { label: "NO", value: "NO" },
     ],
     onChange,
+    resetTrigger = 0,
 }) => {
     const [selected, setSelected] = useState(defaultValue);
 
@@ -35,6 +37,10 @@ const CheckboxField: React.FC<CheckboxFieldProps> = ({
         setSelected(value);
         onChange?.(value);
     };
+
+    useEffect(() => {
+        setSelected(defaultValue);
+    }, [resetTrigger, defaultValue]);
 
     return (
         <div className="mb-4">

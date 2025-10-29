@@ -107,14 +107,6 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
     }
 
-    function handleSignatureChange() {
-        const field = form.fields.find(f => f.field_type === "signature");
-        if (!field) return;
-        setTouched((prev) => ({ ...prev, [field.id]: true }));
-        const err = validateField(field);
-        setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
-    }
-
     // Función para manejar cambios en campos que podrían afectar a otros campos
     const handleFieldChange = (fieldId: number, value: string) => {
         valuesRef.current[fieldId] = value;
@@ -289,6 +281,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             hasError={!!showError}
                             defaultValue={valuesRef.current[id] || ""}
                             options={field.options || []}
+                            resetTrigger={resetTrigger}
                             onChange={(val) => {
                                 handleFieldChange(id, val);
                                 handleBlur(field);
