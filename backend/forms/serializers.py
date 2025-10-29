@@ -30,6 +30,11 @@ class FormFieldSerializer(serializers.ModelSerializer):
             "options",
             "depends_on",
             "depends_value",
+            "api_url",
+            "min_search_chars",
+            "result_key",
+            "label_key",
+            "value_key",
         ]
         validators = []
 

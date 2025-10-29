@@ -10,6 +10,7 @@ class FormField(models.Model):
         ("checkbox", "Checkbox"),
         ("select", "Lista Desplegable"),
         ("radio", "Lista seleccion unica"),
+        ("async_select", "Select con búsqueda asíncrona"),
     ]
 
     id = models.AutoField(primary_key=True, db_column="ID")
@@ -30,6 +31,38 @@ class FormField(models.Model):
     )
     depends_value = models.CharField(
         max_length=200, blank=True, null=True, db_column="DEPENDS_VALUE"
+    )
+
+    api_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        db_column="API_URL",
+        help_text="URL para consultar opciones (ej: /api/search-documentos/)",
+    )
+    min_search_chars = models.IntegerField(
+        default=3,
+        db_column="MIN_SEARCH_CHARS",
+        help_text="Mínimo de caracteres para realizar búsqueda",
+    )
+    result_key = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        db_column="RESULT_KEY",
+        help_text="Clave donde vienen los resultados en la respuesta JSON",
+    )
+    label_key = models.CharField(
+        max_length=100,
+        default="label",
+        db_column="LABEL_KEY",
+        help_text="Campo a usar como label en las opciones",
+    )
+    value_key = models.CharField(
+        max_length=100,
+        default="value",
+        db_column="VALUE_KEY",
+        help_text="Campo a usar como value en las opciones",
     )
 
     class Meta:
