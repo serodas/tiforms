@@ -49,9 +49,7 @@ class FormFieldSerializer(serializers.ModelSerializer):
         return form_field
 
     def update(self, instance, validated_data):
-        print("✏️ FormFieldSerializer.update() llamado", flush=True)
         options_data = validated_data.pop("options", [])
-        print(f"🔧 Options data: {options_data}", flush=True)
         instance.name = validated_data.get("name", instance.name)
         instance.label = validated_data.get("label", instance.label)
         instance.field_type = validated_data.get("field_type", instance.field_type)
@@ -167,6 +165,16 @@ class FormSerializer(serializers.ModelSerializer):
         if form_field not in form.fields.all():
             form.fields.add(form_field)
 
+    def _update_field_options(self, form_field, field_data):
+        """Actualiza las opciones para campos de tipo checkbox/select"""
+        field_type = field_data.get("field_type")
+        options_data = field_data.get("options", [])
+
+        if field_type in ["checkbox", "select", "radio"] and options_data:
+            form_field.options.all().delete()
+            for option_data in options_data:
+                self._create_field_option(form_field, option_data)
+
     def update(self, instance, validated_data):
         """Actualiza el formulario y sus campos"""
         fields_data = validated_data.pop("fields", None)
@@ -197,7 +205,7 @@ class FormSerializer(serializers.ModelSerializer):
         # Crear nuevos campos y relaciones
         for field_data in fields_data:
             form_field = self._get_or_create_form_field(field_data)
-            self._process_field_options(form_field, field_data)
+            self._update_field_options(form_field, field_data)
             instance.fields.add(form_field)
 
 
