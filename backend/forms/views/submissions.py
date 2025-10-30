@@ -2,9 +2,9 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Form, FormSubmission
-from .serializers import FormSubmissionSerializer
-from .services import handle_uploaded_files
+from ..models import Form
+from ..serializers import FormSubmissionSerializer
+from ..services import uploaded_file
 
 
 class FormSubmissionCreateAPIView(APIView):
@@ -32,7 +32,7 @@ class FormSubmissionCreateAPIView(APIView):
 
         for key in request.FILES:
             files = request.FILES.getlist(key)
-            urls = handle_uploaded_files(files)
+            urls = uploaded_file(files)
             submission_data[key] = urls[0] if len(urls) == 1 else urls
 
         serializer = FormSubmissionSerializer(

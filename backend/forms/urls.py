@@ -1,8 +1,10 @@
 from django.urls import path, include
 
-from .views_submissions import FormSubmissionCreateAPIView
+from forms.views.beneficiarios import BeneficiarioView
+from forms.views.health_check import health_check
+from forms.views.submissions import FormSubmissionCreateAPIView
 
-from .views import health_check, FormViewSet, FormFieldViewSet
+from forms.views.forms import FormViewSet, FormFieldViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -14,5 +16,6 @@ urlpatterns = [
     path(
         "submissions/", FormSubmissionCreateAPIView.as_view(), name="form-submissions"
     ),
-    path("healthz/", health_check),
+    path("beneficiarios/", BeneficiarioView.as_view(), name="beneficiarios"),
+    path("healthz/", health_check, name="health-check"),
 ]
