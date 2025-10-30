@@ -60,6 +60,13 @@ class FormFieldSerializer(serializers.ModelSerializer):
         instance.depends_value = validated_data.get(
             "depends_value", instance.depends_value
         )
+        instance.api_url = validated_data.get("api_url", instance.api_url)
+        instance.min_search_chars = validated_data.get(
+            "min_search_chars", instance.min_search_chars
+        )
+        instance.result_key = validated_data.get("result_key", instance.result_key)
+        instance.label_key = validated_data.get("label_key", instance.label_key)
+        instance.value_key = validated_data.get("value_key", instance.value_key)
         instance.save()
         if options_data is not None:
             instance.options.all().delete()
@@ -108,6 +115,11 @@ class FormSerializer(serializers.ModelSerializer):
         required = field_data.get("required", True)
         depends_on = field_data.get("depends_on")
         depends_value = field_data.get("depends_value")
+        api_url = field_data.get("api_url")
+        min_search_chars = field_data.get("min_search_chars")
+        result_key = field_data.get("result_key")
+        label_key = field_data.get("label_key")
+        value_key = field_data.get("value_key")
 
         # Buscar field existente con los mismos atributos clave
         form_field = FormField.objects.filter(
@@ -124,6 +136,11 @@ class FormSerializer(serializers.ModelSerializer):
                 required=required,
                 depends_on=depends_on,
                 depends_value=depends_value,
+                api_url=api_url,
+                min_search_chars=min_search_chars,
+                result_key=result_key,
+                label_key=label_key,
+                value_key=value_key,
             )
             return form_field
 
