@@ -5,6 +5,7 @@ import SignaturePad, { SignaturePadHandle } from "./SignaturePad";
 import "@/styles/form.css";
 import FileInputCamera, { FileItem } from "./FileInputCamera";
 import CheckboxField from "./CheckboxField";
+import AsyncSelectField from "./AsyncSelectField";
 
 interface Option {
     label: string;
@@ -20,6 +21,11 @@ interface FormField {
     options?: Option[];
     depends_on?: string | null;
     depends_value?: string | null;
+    api_url?: string | null;
+    min_search_chars?: number;
+    result_key?: string | null;
+    label_key?: string;
+    value_key?: string;
 }
 
 interface FormData {
@@ -77,7 +83,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             if (files.length === 0) return "Este campo es obligatorio";
         } else if (field.field_type === "signature") {
             if (!signatureRef.current?.isSigned()) return "La firma es obligatoria";
-        } else if (field.field_type === "checkbox") {
+        } else if (field.field_type === "checkbox" || field.field_type === "async_select") {
             const val = valuesRef.current[field.id];
             if (!val || val === "") return "Debes seleccionar una opción";
         } else {
@@ -293,6 +299,23 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                             </p>
                         )}
                     </div>
+                );
+            case "async_select":
+                return (
+                    <AsyncSelectField
+                        key={id}
+                        fieldId={id}
+                        label={field.label}
+                        required={!!field.required}
+                        hasError={!!showError}
+                        apiUrl={field.api_url || ""}
+                        minSearchChars={field.min_search_chars || 3}
+                        resultKey={field.result_key}
+                        labelKey={field.label_key || "label"}
+                        valueKey={field.value_key || "value"}
+                        onChange={(value) => handleFieldChange(id, value)}
+                        onBlur={() => handleBlur(field)}
+                    />
                 );
             default:
                 return (
