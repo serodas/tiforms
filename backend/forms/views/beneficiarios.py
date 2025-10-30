@@ -15,7 +15,7 @@ class BeneficiarioView(APIView):
             beneficiario = self.beneficiario_service.search(search_param)
 
             if beneficiario:
-                return Response({"data": beneficiario})
+                return Response({"results": beneficiario})
             else:
                 return Response(
                     {"error": "Beneficiario no encontrado"},
