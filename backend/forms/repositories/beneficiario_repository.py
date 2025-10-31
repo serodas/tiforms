@@ -8,7 +8,7 @@ class BeneficiarioRepository(BaseRepository):
         self, search_param: str
     ) -> list[Dict[str, Any]] | Dict[str, Any] | None:
         try:
-            search_pattern = f"%{search_param}%"
+            search_pattern = f"%{search_param.upper()}%"
             sql = """SELECT 
                 BENEFICIARIO.becodbene,
                 BENEFICIARIO.tdtipdoc,
