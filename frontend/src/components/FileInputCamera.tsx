@@ -154,12 +154,6 @@ const FileInputCamera: React.FC<FileInputCameraProps> = ({
                 </div>
             </div>
 
-            {hasError && (
-                <p className="text-sm mt-1" style={{ color: "#f6abab" }}>
-                    Este campo es obligatorio
-                </p>
-            )}
-
             <input
                 ref={fileInputRef}
                 type="file"
