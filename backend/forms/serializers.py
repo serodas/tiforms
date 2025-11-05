@@ -35,6 +35,9 @@ class FormFieldSerializer(serializers.ModelSerializer):
             "result_key",
             "label_key",
             "value_key",
+            "dynamic_options_url",
+            "depends_on_field",
+            "dynamic_result_key",
         ]
         validators = []
 
@@ -65,6 +68,15 @@ class FormFieldSerializer(serializers.ModelSerializer):
         instance.result_key = validated_data.get("result_key", instance.result_key)
         instance.label_key = validated_data.get("label_key", instance.label_key)
         instance.value_key = validated_data.get("value_key", instance.value_key)
+        instance.dynamic_options_url = validated_data.get(
+            "dynamic_options_url", instance.dynamic_options_url
+        )
+        instance.depends_on_field = validated_data.get(
+            "depends_on_field", instance.depends_on_field
+        )
+        instance.dynamic_result_key = validated_data.get(
+            "dynamic_result_key", instance.dynamic_result_key
+        )
         instance.save()
         if options_data is not None:
             instance.options.all().delete()
@@ -118,7 +130,9 @@ class FormSerializer(serializers.ModelSerializer):
         result_key = field_data.get("result_key")
         label_key = field_data.get("label_key")
         value_key = field_data.get("value_key")
-
+        dynamic_options_url = field_data.get("dynamic_options_url")
+        depends_on_field = field_data.get("depends_on_field")
+        dynamic_result_key = field_data.get("dynamic_result_key")
         # Buscar field existente con los mismos atributos clave
         form_field = FormField.objects.filter(
             label=label, field_type=field_type, required=required
@@ -139,6 +153,9 @@ class FormSerializer(serializers.ModelSerializer):
                 result_key=result_key,
                 label_key=label_key,
                 value_key=value_key,
+                dynamic_options_url=dynamic_options_url,
+                depends_on_field=depends_on_field,
+                dynamic_result_key=dynamic_result_key,
             )
             return form_field
 

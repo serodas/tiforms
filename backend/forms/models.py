@@ -64,6 +64,27 @@ class FormField(models.Model):
         db_column="VALUE_KEY",
         help_text="Campo a usar como value en las opciones",
     )
+    dynamic_options_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        db_column="DYNAMIC_OPTIONS_URL",
+        help_text="URL para obtener opciones dinámicas basadas en otro campo",
+    )
+    depends_on_field = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        db_column="DEPENDS_ON_FIELD",
+        help_text="Nombre del campo del que dependen las opciones",
+    )
+    dynamic_result_key = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        db_column="DYNAMIC_RESULT_KEY",
+        help_text="Clave para los resultados en la respuesta dinámica",
+    )
 
     class Meta:
         db_table = '"TIFORMS"."FORMFIELD"'
