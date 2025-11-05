@@ -217,7 +217,7 @@ export default function DynamicSelectField({
                 isSearchable={false}
             />
             {hasError && (
-                <p className="text-sm mt-1 text-red-500">
+                <p className="text-sm mt-1" style={{ color: "#f6abab" }}>
                     Este campo es obligatorio
                 </p>
             )}
