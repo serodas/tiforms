@@ -6,6 +6,8 @@ from ..serializers import FormSerializer, FormFieldSerializer, FormSubmissionSer
 class FormViewSet(viewsets.ModelViewSet):
     queryset = Form.objects.all().order_by("-created_at")
     serializer_class = FormSerializer
+    lookup_field = "slug"
+    lookup_url_kwarg = "slug"
 
 
 class FormFieldViewSet(viewsets.ModelViewSet):
