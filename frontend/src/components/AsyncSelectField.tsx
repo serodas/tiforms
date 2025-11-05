@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import AsyncSelect from "react-select/async";
 
 interface Option {
@@ -21,6 +21,19 @@ interface AsyncSelectFieldProps {
     valueKey: string;
     onChange: (value: string) => void;
     onBlur: () => void;
+    debounceDelay?: number;
+}
+
+// Función debounce mejorada
+function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    delay: number
+): (...args: Parameters<T>) => void {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(null, args), delay);
+    };
 }
 
 export default function AsyncSelectField({
@@ -34,23 +47,48 @@ export default function AsyncSelectField({
     labelKey,
     valueKey,
     onChange,
-    onBlur
+    onBlur,
+    debounceDelay = 300
 }: AsyncSelectFieldProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [inputValue, setInputValue] = useState("");
+    const abortControllerRef = useRef<AbortController | null>(null);
 
-    const loadOptions = useCallback(
+    // Función para cancelar la request anterior
+    const cancelPreviousRequest = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+    }, []);
+
+    const loadOptionsReal = useCallback(
         async (inputValue: string): Promise<Option[]> => {
             if (inputValue.length < minSearchChars) {
                 return [];
             }
 
+            // Cancelar request anterior antes de iniciar una nueva
+            cancelPreviousRequest();
+
             setIsLoading(true);
+            
+            // Crear nuevo AbortController para esta request
+            const abortController = new AbortController();
+            abortControllerRef.current = abortController;
+
             try {
                 const base = process.env.NEXT_PUBLIC_API_BASE;
                 const response = await fetch(
-                    `${base}${apiUrl}?search=${encodeURIComponent(inputValue)}`
+                    `${base}${apiUrl}?search=${encodeURIComponent(inputValue)}`,
+                    {
+                        signal: abortController.signal
+                    }
                 );
+                
+                // Si la request fue cancelada, no hacer nada
+                if (abortController.signal.aborted) {
+                    return [];
+                }
                 
                 if (!response.ok) {
                     throw new Error("Error al cargar opciones");
@@ -75,23 +113,43 @@ export default function AsyncSelectField({
                 }
 
                 return [];
-            } catch (error) {
-                console.error("Error loading options:", error);
+            } catch (error: any) {
+                // Solo mostrar error si no fue por cancelación
+                if (error.name !== 'AbortError') {
+                    console.error("Error loading options:", error);
+                }
                 return [];
             } finally {
-                setIsLoading(false);
+                // Solo limpiar el loading state si esta request no fue cancelada
+                // y si todavía somos el controller actual
+                if (abortControllerRef.current === abortController && !abortController.signal.aborted) {
+                    setIsLoading(false);
+                    abortControllerRef.current = null;
+                }
             }
         },
-        [apiUrl, minSearchChars, resultKey, labelKey, valueKey]
+        [apiUrl, minSearchChars, resultKey, labelKey, valueKey, cancelPreviousRequest]
+    );
+
+    // Versión con debounce de loadOptions
+    const loadOptions = useCallback(
+        debounce(async (inputValue: string, callback: (options: Option[]) => void) => {
+            const options = await loadOptionsReal(inputValue);
+            callback(options);
+        }, debounceDelay),
+        [loadOptionsReal, debounceDelay]
     );
 
     const handleChange = (selectedOption: Option | null) => {
         onChange(selectedOption?.value || "");
     };
 
-    const borderStyle = hasError 
-        ? { borderColor: "#f6abab" } 
-        : { borderColor: "#d1d5db" };
+    // Cancelar requests pendientes cuando el componente se desmonte
+    React.useEffect(() => {
+        return () => {
+            cancelPreviousRequest();
+        };
+    }, [cancelPreviousRequest]);
 
     const customStyles = {
         control: (base: any, state: any) => ({
@@ -118,15 +176,14 @@ export default function AsyncSelectField({
                 cacheOptions
                 defaultOptions
                 loadOptions={loadOptions}
-                onInputChange={setInputValue}
                 onChange={handleChange}
                 onBlur={onBlur}
                 isLoading={isLoading}
                 styles={customStyles}
                 placeholder={`Escriba al menos ${minSearchChars} caracteres...`}
-                loadingMessage={({ inputValue }) => 
-                    inputValue.length < minSearchChars 
-                        ? `Escriba al menos ${minSearchChars} caracteres` 
+                loadingMessage={({ inputValue }) =>
+                    inputValue.length < minSearchChars
+                        ? `Escriba al menos ${minSearchChars} caracteres`
                         : "Buscando..."
                 }
                 noOptionsMessage={({ inputValue }) =>
