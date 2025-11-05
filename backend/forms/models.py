@@ -54,12 +54,16 @@ class FormField(models.Model):
     )
     label_key = models.CharField(
         max_length=100,
+        blank=True,
+        null=True,
         default="label",
         db_column="LABEL_KEY",
         help_text="Campo a usar como label en las opciones",
     )
     value_key = models.CharField(
         max_length=100,
+        blank=True,
+        null=True,
         default="value",
         db_column="VALUE_KEY",
         help_text="Campo a usar como value en las opciones",
@@ -123,11 +127,12 @@ class Form(models.Model):
 
 
 class FormFieldForm(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.AutoField(primary_key=True, db_column="ID")
     form = models.ForeignKey(Form, db_column="FORM_ID", on_delete=models.CASCADE)
     formfield = models.ForeignKey(
         FormField, db_column="FORMFIELD_ID", on_delete=models.CASCADE
     )
+    field_order = models.IntegerField(default=0, db_column="FIELD_ORDER")
 
     class Meta:
         db_table = '"TIFORMS"."FORM_FORMFIELDS"'
