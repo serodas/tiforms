@@ -1,3 +1,6 @@
+import time
+from django.utils.text import slugify
+
 from django.db import models
 
 
@@ -112,6 +115,14 @@ class FormField(models.Model):
 class Form(models.Model):
     id = models.AutoField(primary_key=True, db_column="ID")
     name = models.CharField(max_length=200, db_column="NAME")
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        blank=True,
+        null=True,
+        db_column="SLUG",
+        help_text="Identificador único para URLs",
+    )
     description = models.TextField(blank=True, db_column="DESCRIPTION")
     created_at = models.DateTimeField(auto_now_add=True, db_column="CREATED_AT")
     fields = models.ManyToManyField(
@@ -124,6 +135,25 @@ class Form(models.Model):
 
     def __str__(self):
         return f"Formulario: {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            max_attempts = 100
+
+            while (
+                Form.objects.filter(slug=slug).count() > 0 and counter <= max_attempts
+            ):
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            if counter > max_attempts:
+                slug = f"{base_slug}-{int(time.time())}"
+
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class FormFieldForm(models.Model):

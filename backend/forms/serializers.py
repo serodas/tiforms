@@ -143,7 +143,8 @@ class FormSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Form
-        fields = ["id", "name", "description", "fields"]
+        fields = ["id", "name", "slug", "description", "fields"]
+        read_only_fields = ["id", "slug"]
 
     def to_representation(self, instance):
         """Sobrescribir para ordenar los fields por field_order"""
@@ -156,6 +157,29 @@ class FormSerializer(serializers.ModelSerializer):
         ).data
 
         return representation
+
+    def validate_name(self, value):
+        """
+        Validar que el nombre sea único para evitar slugs duplicados.
+        Usa count() en lugar de exists() para compatibilidad con IBM i,
+        exists() genera error (-418) Use of parameter marker or NULL not valid.
+        """
+        value = value.strip() if isinstance(value, str) else value
+
+        if self.instance is None:
+            count = Form.objects.filter(name=value).count()
+            if count > 0:
+                raise serializers.ValidationError(
+                    "Ya existe un formulario con este nombre. El slug generado estaría duplicado."
+                )
+        else:
+            count = Form.objects.filter(name=value).exclude(id=self.instance.id).count()
+            if count > 0:
+                raise serializers.ValidationError(
+                    "Ya existe otro formulario con este nombre. El slug generado estaría duplicado."
+                )
+
+        return value
 
     def create(self, validated_data):
         formfields_data = validated_data.pop("formfieldform_set", [])
