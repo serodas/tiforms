@@ -145,6 +145,18 @@ class FormSerializer(serializers.ModelSerializer):
         model = Form
         fields = ["id", "name", "description", "fields"]
 
+    def to_representation(self, instance):
+        """Sobrescribir para ordenar los fields por field_order"""
+        representation = super().to_representation(instance)
+
+        ordered_formfields = instance.formfieldform_set.all().order_by("field_order")
+
+        representation["fields"] = FormFieldThroughSerializer(
+            ordered_formfields, many=True
+        ).data
+
+        return representation
+
     def create(self, validated_data):
         formfields_data = validated_data.pop("formfieldform_set", [])
 
