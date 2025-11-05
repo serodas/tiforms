@@ -6,6 +6,7 @@ import "@/styles/form.css";
 import FileInputCamera, { FileItem } from "./FileInputCamera";
 import CheckboxField from "./CheckboxField";
 import AsyncSelectField from "./AsyncSelectField";
+import DynamicSelectField from "./DynamicSelectField";
 
 interface Option {
     label: string;
@@ -26,6 +27,9 @@ interface FormField {
     result_key?: string | null;
     label_key?: string;
     value_key?: string;
+    dynamic_options_url?: string | null;
+    depends_on_field?: string | null;
+    dynamic_result_key?: string | null;
 }
 
 interface FormData {
@@ -83,7 +87,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
             if (files.length === 0) return "Este campo es obligatorio";
         } else if (field.field_type === "signature") {
             if (!signatureRef.current?.isSigned()) return "La firma es obligatoria";
-        } else if (field.field_type === "checkbox" || field.field_type === "async_select") {
+        } else if (field.field_type === "checkbox" || field.field_type === "async_select" || field.field_type === "select") {
             const val = valuesRef.current[field.id];
             if (!val || val === "") return "Debes seleccionar una opción";
         } else {
@@ -113,11 +117,22 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
         setFieldErrors((prev) => ({ ...prev, [field.id]: err }));
     }
 
-    // Función para manejar cambios en campos que podrían afectar a otros campos
     const handleFieldChange = (fieldId: number, value: string) => {
+        const previousValue = valuesRef.current[fieldId];
         valuesRef.current[fieldId] = value;
 
-        // Si este campo tiene dependientes, actualizar la visibilidad
+        const changedField = form.fields.find(f => f.id === fieldId);
+        if (changedField && changedField.field_type === "async_select") {
+            const dependentFields = form.fields.filter(f =>
+                f.depends_on_field === changedField.name
+            );
+
+            dependentFields.forEach(depField => {
+                valuesRef.current[depField.id] = "";
+                setFieldErrors(prev => ({ ...prev, [depField.id]: "" }));
+            });
+        }
+
         const hasDependents = form.fields.some(f => f.depends_on === form.fields.find(f => f.id === fieldId)?.name);
         if (hasDependents) {
             const newVisibleFields = new Set<number>();
@@ -316,6 +331,52 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                         onChange={(value) => handleFieldChange(id, value)}
                         onBlur={() => handleBlur(field)}
                     />
+                );
+            case "select":
+                if (field.dynamic_options_url) {
+                    const dependsField = form.fields.find(f => f.name === field.depends_on_field);
+                    const dependsValue = dependsField ? valuesRef.current[dependsField.id] : null;
+
+                    return (
+                        <DynamicSelectField
+                            key={id}
+                            fieldId={id}
+                            label={field.label}
+                            required={!!field.required}
+                            hasError={!!showError}
+                            dependsOnField={field.depends_on_field || ""}
+                            dependsValue={dependsValue}
+                            dynamicOptionsUrl={field.dynamic_options_url || ""}
+                            dynamicResultKey={field.dynamic_result_key}
+                            labelKey={field.label_key || "label"}
+                            valueKey={field.value_key || "value"}
+                            onChange={(value) => handleFieldChange(id, value)}
+                            onBlur={() => handleBlur(field)}
+                            resetTrigger={resetTrigger}
+                        />
+                    );
+                }
+                return (
+                    <div className="mb-4" key={id}>
+                        <label className="block text-gray-700 font-medium mb-1">
+                            {field.label} {requiredMark}
+                        </label>
+                        <select
+                            className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            style={borderStyle}
+                            onChange={(e) => handleFieldChange(id, e.target.value)}
+                            onBlur={() => handleBlur(field)}
+                            value={valuesRef.current[id] || ""}
+                        >
+                            <option value="">Seleccione una opción</option>
+                            {field.options?.map((option, index) => (
+                                <option key={index} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                        {showError && <p className="text-sm mt-1" style={{ color: "#f6abab" }}>{fieldErrors[id]}</p>}
+                    </div>
                 );
             default:
                 return (
