@@ -330,6 +330,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                         valueKey={field.value_key || "value"}
                         onChange={(value) => handleFieldChange(id, value)}
                         onBlur={() => handleBlur(field)}
+                        resetTrigger={resetTrigger}
                     />
                 );
             case "select":

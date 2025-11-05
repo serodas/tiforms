@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import AsyncSelect from "react-select/async";
 
 interface Option {
@@ -22,6 +22,7 @@ interface AsyncSelectFieldProps {
     onChange: (value: string) => void;
     onBlur: () => void;
     debounceDelay?: number;
+    resetTrigger?: number; // Nueva prop
 }
 
 // Función debounce mejorada
@@ -48,10 +49,13 @@ export default function AsyncSelectField({
     valueKey,
     onChange,
     onBlur,
-    debounceDelay = 300
+    debounceDelay = 300,
+    resetTrigger = 0 // Valor por defecto
 }: AsyncSelectFieldProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedValue, setSelectedValue] = useState<Option | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const asyncSelectRef = useRef<any>(null);
 
     // Función para cancelar la request anterior
     const cancelPreviousRequest = useCallback(() => {
@@ -60,6 +64,18 @@ export default function AsyncSelectField({
             abortControllerRef.current = null;
         }
     }, []);
+
+    // Resetear el campo cuando cambie resetTrigger
+    useEffect(() => {
+        if (resetTrigger > 0) {
+            setSelectedValue(null);
+            if (asyncSelectRef.current) {
+                asyncSelectRef.current.clearValue();
+            }
+            cancelPreviousRequest();
+            setIsLoading(false);
+        }
+    }, [resetTrigger, cancelPreviousRequest]);
 
     const loadOptionsReal = useCallback(
         async (inputValue: string): Promise<Option[]> => {
@@ -71,7 +87,7 @@ export default function AsyncSelectField({
             cancelPreviousRequest();
 
             setIsLoading(true);
-            
+
             // Crear nuevo AbortController para esta request
             const abortController = new AbortController();
             abortControllerRef.current = abortController;
@@ -84,12 +100,12 @@ export default function AsyncSelectField({
                         signal: abortController.signal
                     }
                 );
-                
+
                 // Si la request fue cancelada, no hacer nada
                 if (abortController.signal.aborted) {
                     return [];
                 }
-                
+
                 if (!response.ok) {
                     throw new Error("Error al cargar opciones");
                 }
@@ -141,6 +157,7 @@ export default function AsyncSelectField({
     );
 
     const handleChange = (selectedOption: Option | null) => {
+        setSelectedValue(selectedOption);
         onChange(selectedOption?.value || "");
     };
 
@@ -173,11 +190,13 @@ export default function AsyncSelectField({
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             <AsyncSelect
+                ref={asyncSelectRef}
                 cacheOptions
                 defaultOptions
                 loadOptions={loadOptions}
                 onChange={handleChange}
                 onBlur={onBlur}
+                value={selectedValue}
                 isLoading={isLoading}
                 styles={customStyles}
                 placeholder={`Escriba al menos ${minSearchChars} caracteres...`}
