@@ -1,5 +1,6 @@
 from django.urls import path, include
 
+from forms.views.generic import GenericModelCreateView
 from forms.views.submission_task_log import (
     SubmissionTaskLogByWebhookAPIView,
     SubmissionTaskLogDetailAPIView,
@@ -59,5 +60,6 @@ urlpatterns = [
         SubmissionTaskLogByWebhookAPIView.as_view(),
         name="api-task-log-by-webhook",
     ),
+    path("<str:model_name>/", GenericModelCreateView.as_view(), name="generic-create"),
     path("healthz/", health_check, name="health-check"),
 ]
