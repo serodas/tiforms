@@ -16,7 +16,13 @@ class ConsecutivosRecibosView(APIView):
             search_param = request.GET.get("search", "").strip()
             consecutivos = self.consecutivos_recibos_service.search(search_param)
 
-            return Response({"results": consecutivos})
+            if consecutivos:
+                return Response({"results": consecutivos})
+            else:
+                return Response(
+                    {"error": "No se encontraron consecutivos de recibos"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
