@@ -11,16 +11,12 @@ def handle_new_submission(sender, submission, **kwargs):
     """
     Listener síncrono para nuevas submissions
     """
-    print(f"🎯 Evento recibido: Nueva submission {submission.id}")
 
     # Buscar webhooks activos para este formulario
     webhooks = WebhookConfig.objects.filter(form=submission.form, is_active=True)
 
-    print(f"🔍 Encontrados {webhooks.count()} webhooks activos")
-
     # Procesar cada webhook de forma síncrona
     for webhook in webhooks:
-        print(f"🚀 Procesando webhook: {webhook.name}")
         process_webhook_sync(webhook, submission)
 
 
@@ -59,10 +55,6 @@ def process_webhook_sync(webhook, submission):
         if custom_headers:
             headers.update(custom_headers)
 
-        print(f"🌐 Enviando a: {webhook.url}")
-        print(f"📦 Payload: {json.dumps(payload, indent=2)}")
-        print(f"📋 Headers: {headers}")
-
         # Hacer la petición HTTP (síncrona)
         response = requests.post(
             webhook.url, json=payload, headers=headers, timeout=webhook.timeout
@@ -78,13 +70,11 @@ def process_webhook_sync(webhook, submission):
         # Determinar estado
         if response.status_code in [200, 201, 202]:
             task_log.status = "success"
-            print(f"✅ Webhook exitoso - Status: {response.status_code}")
         else:
             task_log.status = "failed"
             task_log.error_message = (
                 f"HTTP {response.status_code}: {response.text[:500]}"
             )
-            print(f"❌ Webhook fallido - Status: {response.status_code}")
 
         task_log.response_data = json.dumps(response_data)
         task_log.completed_at = timezone.now()
@@ -121,4 +111,3 @@ def handle_webhook_error(task_log, error_message):
     task_log.error_message = error_message
     task_log.completed_at = timezone.now()
     task_log.save()
-    print(f"💥 Error: {error_message}")

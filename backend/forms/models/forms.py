@@ -137,9 +137,6 @@ class Form(models.Model):
         db_table = '"TIFORMS"."FORM"'
         managed = False
 
-    def __str__(self):
-        return f"Formulario: {self.name}"
-
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(self.name)
@@ -316,5 +313,4 @@ def trigger_submission_created(sender, instance, created, **kwargs):
     Esta función se ejecuta cuando se guarda un FormSubmission
     """
     if created:
-        print(f"📝 FormSubmission creado: {instance.id}", flush=True)
         submission_created.send(sender=sender, submission=instance)
