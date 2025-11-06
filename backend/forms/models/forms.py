@@ -3,6 +3,9 @@ import json
 from django.utils.text import slugify
 
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from forms.signals.webhook_signals import submission_created
 
 
 class FormField(models.Model):
@@ -171,20 +174,6 @@ class FormFieldForm(models.Model):
         unique_together = (("form", "formfield"),)
 
 
-class FormSubmission(models.Model):
-    id = models.AutoField(primary_key=True, db_column="ID")
-    form = models.ForeignKey(Form, on_delete=models.CASCADE, db_column="FORM_ID")
-    data = models.TextField(db_column="DATA")
-    created_at = models.DateTimeField(auto_now_add=True, db_column="CREATED_AT")
-
-    class Meta:
-        db_table = '"TIFORMS"."FORMSUBMISSION"'
-        managed = False
-
-    def __str__(self):
-        return f"Respuesta al formulario {self.form.name}"
-
-
 class FormFieldOption(models.Model):
     id = models.AutoField(primary_key=True, db_column="ID")
     formfield = models.ForeignKey(
@@ -305,3 +294,27 @@ class SubmissionTaskLog(models.Model):
     class Meta:
         db_table = '"TIFORMS"."SUBMISSION_TASK_LOG"'
         managed = False
+
+
+class FormSubmission(models.Model):
+    id = models.AutoField(primary_key=True, db_column="ID")
+    form = models.ForeignKey(Form, on_delete=models.CASCADE, db_column="FORM_ID")
+    data = models.TextField(db_column="DATA")
+    created_at = models.DateTimeField(auto_now_add=True, db_column="CREATED_AT")
+
+    class Meta:
+        db_table = '"TIFORMS"."FORMSUBMISSION"'
+        managed = False
+
+    def __str__(self):
+        return f"Respuesta al formulario {self.form.name}"
+
+
+@receiver(post_save, sender=FormSubmission)
+def trigger_submission_created(sender, instance, created, **kwargs):
+    """
+    Esta función se ejecuta cuando se guarda un FormSubmission
+    """
+    if created:
+        print(f"📝 FormSubmission creado: {instance.id}", flush=True)
+        submission_created.send(sender=sender, submission=instance)
