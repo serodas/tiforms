@@ -11,5 +11,4 @@ class FormsConfig(AppConfig):
         """
         import forms.signals.webhook_signals
         import forms.listeners.webhook_listeners
-
-        print("✅ Event listeners síncronos registrados")
+        import forms.models.soporte_fomag
