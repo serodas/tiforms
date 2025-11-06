@@ -7,7 +7,6 @@ from .schema import DatabaseSchemaEditor
 from .introspection import DatabaseIntrospection
 from .creation import DatabaseCreation
 from .client import FakeClient
-from .features import FakeFeatures
 
 
 class IbmiCursorWrapper:
