@@ -1,4 +1,5 @@
 import logging
+import json
 
 from django.db import transaction
 from rest_framework import serializers
@@ -8,6 +9,8 @@ from forms.models.forms import (
     FormFieldForm,
     FormFieldOption,
     FormSubmission,
+    SubmissionTaskLog,
+    WebhookConfig,
 )
 
 logger = logging.getLogger("forms")
@@ -322,3 +325,106 @@ class FormSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = FormSubmission
         fields = ["form", "data"]
+
+
+class WebhookConfigSerializer(serializers.ModelSerializer):
+    form_name = serializers.CharField(source="form.name", read_only=True)
+    headers_dict = serializers.SerializerMethodField()
+    config_dict = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WebhookConfig
+        fields = [
+            "id",
+            "form",
+            "form_name",
+            "name",
+            "type",
+            "url",
+            "is_active",
+            "headers",
+            "headers_dict",
+            "timeout",
+            "retry_count",
+            "config",
+            "config_dict",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_headers_dict(self, obj):
+        return obj.headers_dict
+
+    def get_config_dict(self, obj):
+        return obj.config_dict
+
+    def validate_headers(self, value):
+        """Validar que headers sea un JSON válido"""
+        if value:
+            try:
+                json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Headers debe ser un JSON válido")
+        return value
+
+    def validate_config(self, value):
+        """Validar que config sea un JSON válido"""
+        if value:
+            try:
+                json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Config debe ser un JSON válido")
+        return value
+
+    def create(self, validated_data):
+        # Asegurar que los campos JSON tengan valores por defecto
+        if "headers" not in validated_data or not validated_data["headers"]:
+            validated_data["headers"] = "{}"
+        if "config" not in validated_data or not validated_data["config"]:
+            validated_data["config"] = "{}"
+
+        return super().create(validated_data)
+
+
+class SubmissionTaskLogSerializer(serializers.ModelSerializer):
+    webhook_name = serializers.CharField(source="webhook.name", read_only=True)
+    submission_info = serializers.CharField(source="submission.__str__", read_only=True)
+    response_dict = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubmissionTaskLog
+        fields = [
+            "id",
+            "submission",
+            "submission_info",
+            "webhook",
+            "webhook_name",
+            "status",
+            "attempt",
+            "response_data",
+            "response_dict",
+            "error_message",
+            "started_at",
+            "completed_at",
+        ]
+        read_only_fields = ["id", "started_at"]
+
+    def get_response_dict(self, obj):
+        return obj.response_dict
+
+    def validate_response_data(self, value):
+        """Validar que response_data sea un JSON válido"""
+        if value:
+            try:
+                json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError(
+                    "Response data debe ser un JSON válido"
+                )
+        return value
+
+    def create(self, validated_data):
+        if "response_data" not in validated_data:
+            validated_data["response_data"] = None
+
+        return super().create(validated_data)

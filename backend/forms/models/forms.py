@@ -1,4 +1,5 @@
 import time
+import json
 from django.utils.text import slugify
 
 from django.db import models
@@ -203,3 +204,104 @@ class FormFieldOption(models.Model):
 
     def __str__(self):
         return f"Opción: {self.label} ({self.formfield.label})"
+
+
+class WebhookConfig(models.Model):
+    WEBHOOK_TYPES = [
+        ("api", "API Integration"),
+        ("notification", "Notification"),
+        ("generic", "Generic"),
+    ]
+
+    id = models.AutoField(primary_key=True, db_column="ID")
+    form = models.ForeignKey(
+        "Form", on_delete=models.CASCADE, related_name="webhooks", db_column="FORM_ID"
+    )
+    name = models.CharField(max_length=100, db_column="NAME")
+    type = models.CharField(
+        max_length=20, choices=WEBHOOK_TYPES, default="api", db_column="TYPE"
+    )
+    url = models.URLField(max_length=500, db_column="URL")
+    is_active = models.BooleanField(default=True, db_column="IS_ACTIVE")
+    headers = models.TextField(default="{}", db_column="HEADERS")
+    timeout = models.IntegerField(default=30, db_column="TIMEOUT")
+    retry_count = models.IntegerField(default=3, db_column="RETRY_COUNT")
+    config = models.TextField(default="{}", db_column="CONFIG")
+    created_at = models.DateTimeField(auto_now_add=True, db_column="CREATED_AT")
+
+    def __str__(self):
+        return f"{self.name} - {self.form.name}"
+
+    @property
+    def headers_dict(self):
+        try:
+            return json.loads(self.headers)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    @headers_dict.setter
+    def headers_dict(self, value):
+        self.headers = json.dumps(value if value is not None else {})
+
+    @property
+    def config_dict(self):
+        try:
+            return json.loads(self.config)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    @config_dict.setter
+    def config_dict(self, value):
+        self.config = json.dumps(value if value is not None else {})
+
+    class Meta:
+        db_table = '"TIFORMS"."WEBHOOK_CONFIG"'
+        managed = False
+
+
+class SubmissionTaskLog(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("running", "Running"),
+        ("success", "Success"),
+        ("failed", "Failed"),
+    ]
+
+    id = models.AutoField(primary_key=True, db_column="ID")
+    submission = models.ForeignKey(
+        "FormSubmission",
+        on_delete=models.CASCADE,
+        related_name="task_logs",
+        db_column="FORMSUBMISSION_ID",
+    )
+    webhook = models.ForeignKey(
+        WebhookConfig, on_delete=models.CASCADE, db_column="WEBHOOK_CONFIG_ID"
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", db_column="STATUS"
+    )
+    attempt = models.IntegerField(default=1, db_column="ATTEMPT")
+    response_data = models.TextField(null=True, blank=True, db_column="RESPONSE_DATA")
+    error_message = models.TextField(blank=True, db_column="ERROR_MESSAGE")
+    started_at = models.DateTimeField(auto_now_add=True, db_column="STARTED_AT")
+    completed_at = models.DateTimeField(null=True, blank=True, db_column="COMPLETED_AT")
+
+    def __str__(self):
+        return f"Task {self.id} - {self.status} - Attempt {self.attempt}"
+
+    @property
+    def response_dict(self):
+        if not self.response_data:
+            return None
+        try:
+            return json.loads(self.response_data)
+        except (json.JSONDecodeError, TypeError):
+            return None
+
+    @response_dict.setter
+    def response_dict(self, value):
+        self.response_data = json.dumps(value) if value is not None else None
+
+    class Meta:
+        db_table = '"TIFORMS"."SUBMISSION_TASK_LOG"'
+        managed = False
