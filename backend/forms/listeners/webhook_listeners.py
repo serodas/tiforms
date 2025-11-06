@@ -12,10 +12,8 @@ def handle_new_submission(sender, submission, **kwargs):
     Listener síncrono para nuevas submissions
     """
 
-    # Buscar webhooks activos para este formulario
     webhooks = WebhookConfig.objects.filter(form=submission.form, is_active=True)
 
-    # Procesar cada webhook de forma síncrona
     for webhook in webhooks:
         process_webhook_sync(webhook, submission)
 
@@ -24,7 +22,6 @@ def process_webhook_sync(webhook, submission):
     """
     Procesar webhook de forma síncrona
     """
-    # Crear log de tarea
     task_log = SubmissionTaskLog.objects.create(
         submission=submission,
         webhook=webhook,
@@ -34,40 +31,34 @@ def process_webhook_sync(webhook, submission):
     )
 
     try:
-        # Preparar el request
         payload = {
             "event_type": "form_submission",
             "submission_id": submission.id,
             "form_id": submission.form.id,
             "form_name": submission.form.name,
             "submitted_at": timezone.now().isoformat(),
-            "data": "{}",  # Aquí irían los datos reales del formulario
+            "data": "{}",
         }
 
-        # Preparar headers
         headers = {
             "Content-Type": "application/json",
             "User-Agent": "WebhookSystem/1.0",
         }
 
-        # Agregar headers personalizados del webhook
         custom_headers = webhook.headers_dict
         if custom_headers:
             headers.update(custom_headers)
 
-        # Hacer la petición HTTP (síncrona)
         response = requests.post(
             webhook.url, json=payload, headers=headers, timeout=webhook.timeout
         )
 
-        # Guardar respuesta
         response_data = {
             "status_code": response.status_code,
             "headers": dict(response.headers),
-            "content": response.text[:1000],  # Limitar tamaño
+            "content": response.text[:1000],
         }
 
-        # Determinar estado
         if response.status_code in [200, 201, 202]:
             task_log.status = "success"
         else:
