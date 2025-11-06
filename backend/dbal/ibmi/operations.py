@@ -115,7 +115,10 @@ class DatabaseOperations(BaseDatabaseOperations):
         """
         return ""
 
-    def prepare_sql(self, sql, params):
-        if params:
-            sql = sql.replace("%s", "?")
-        return sql, params
+    def conditional_expression_supported_in_where_clause(self, expression):
+        # DB2 no soporta booleanos directamente en WHERE
+        return False
+
+    def adapt_boolean_field_value(self, value):
+        """Convierte booleanos a 1/0 para DB2"""
+        return 1 if value else 0

@@ -20,15 +20,24 @@ class IbmiCursorWrapper:
         """
         Convierte %s a ? y transforma tipos incompatibles con DB2.
         """
-        if params:
-            new_params = []
-            for p in params:
-                if isinstance(p, bool):
-                    new_params.append(1 if p else 0)
-                else:
-                    new_params.append(p)
+        if params is None:
+            return sql, params
+
+        new_params = []
+        for p in params:
+            if isinstance(p, bool):
+                # Convertir boolean a 1/0 para DB2
+                new_params.append(1 if p else 0)
+            elif p is None:
+                # Mantener None para NULL
+                new_params.append(None)
+            else:
+                new_params.append(p)
+
+        if new_params:
             sql = sql.replace("%s", "?")
             return sql, new_params
+
         return sql, params
 
     def execute(self, sql, params=None):
@@ -50,6 +59,9 @@ class IbmiCursorWrapper:
         return result
 
     def executemany(self, sql, param_list):
+        if not param_list:
+            return self.cursor.executemany(sql, param_list)
+
         new_param_list = []
         for params in param_list:
             _, new_params = self.prepare_sql(sql, params)
@@ -63,12 +75,42 @@ class IbmiCursorWrapper:
     def lastrowid(self):
         return self._lastrowid
 
+    # --- Context Manager Protocol ---
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
+        if hasattr(self.cursor, "close"):
+            self.cursor.close()
+
     # --- Compatibilidad con Django ORM ---
     def fetchone(self):
         return self.cursor.fetchone()
 
     def fetchall(self):
         return self.cursor.fetchall()
+
+    def fetchmany(self, size=None):
+        if size is None:
+            return self.cursor.fetchmany()
+        return self.cursor.fetchmany(size)
+
+    @property
+    def description(self):
+        return self.cursor.description
+
+    @property
+    def rowcount(self):
+        return self.cursor.rowcount
+
+    def setinputsizes(self, sizes):
+        return self.cursor.setinputsizes(sizes)
+
+    def setoutputsize(self, size, column=None):
+        return self.cursor.setoutputsize(size, column)
 
     def __iter__(self):
         return iter(self.cursor)
@@ -131,6 +173,12 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         if self.connection is None:
             params = self.get_connection_params()
             self.connection = self.get_new_connection(params)
+
+    def _cursor(self, name=None):
+        """
+        Método principal que Django usa para crear cursores
+        """
+        return self.create_cursor(name)
 
     def create_cursor(self, name=None):
         self.ensure_connection()
