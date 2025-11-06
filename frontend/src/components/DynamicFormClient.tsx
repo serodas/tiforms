@@ -398,15 +398,12 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
 
     return (
         <form onSubmit={handleSubmit} className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
-            <h1 className="text-2xl font-semibold text-gray-800 mb-6">{form.name}</h1>
-            <p className="text-gray-600 mb-6">{form.description}</p>
-
             {form.fields.map(renderField)}
 
             <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full py-2 rounded-md text-white font-medium transition ${submitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+                className={`w-full py-2 rounded-md text-white font-medium transition ${submitting ? "bg-gray-400 cursor-not-allowed" : "bg-[#003886] hover:bg-blue-700"}`}
             >
                 {submitting ? "Enviando..." : "Enviar"}
             </button>
