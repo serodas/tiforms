@@ -2,7 +2,13 @@ import logging
 
 from django.db import transaction
 from rest_framework import serializers
-from .models import Form, FormField, FormFieldForm, FormFieldOption, FormSubmission
+from forms.models.forms import (
+    Form,
+    FormField,
+    FormFieldForm,
+    FormFieldOption,
+    FormSubmission,
+)
 
 logger = logging.getLogger("forms")
 
