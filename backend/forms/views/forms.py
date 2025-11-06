@@ -1,6 +1,10 @@
 from forms.models.forms import Form, FormField
 from rest_framework import viewsets
-from ..serializers import FormSerializer, FormFieldSerializer, FormSubmissionSerializer
+from forms.serializers.forms import (
+    FormSerializer,
+    FormFieldSerializer,
+    FormSubmissionSerializer,
+)
 
 
 class FormViewSet(viewsets.ModelViewSet):

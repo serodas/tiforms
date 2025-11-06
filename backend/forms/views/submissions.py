@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from forms.models.forms import Form
-from ..serializers import FormSubmissionSerializer
+from forms.serializers.forms import FormSubmissionSerializer
 
 
 class FormSubmissionCreateAPIView(APIView):
