@@ -44,6 +44,9 @@ class SoporteFomag(models.Model):
     certificado = models.CharField(
         max_length=2, db_column="CERTIFICADO", blank=True, null=True
     )
+    firma_usuario = models.CharField(
+        max_length=255, db_column="FIRMA_USUARIO", blank=True, null=True
+    )
 
     class Meta:
         db_table = '"BDSALUD"."TBSOPORTES"'
