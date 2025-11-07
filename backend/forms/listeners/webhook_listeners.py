@@ -37,7 +37,7 @@ def process_webhook_sync(webhook, submission):
             "form_id": submission.form.id,
             "form_name": submission.form.name,
             "submitted_at": timezone.now().isoformat(),
-            "data": "{}",
+            "data": submission.data,
         }
 
         headers = {
@@ -50,7 +50,10 @@ def process_webhook_sync(webhook, submission):
             headers.update(custom_headers)
 
         response = requests.post(
-            webhook.url, json=payload, headers=headers, timeout=webhook.timeout
+            webhook.url,
+            json=json.loads(str(payload.get("data"))),
+            headers=headers,
+            timeout=webhook.timeout,
         )
 
         response_data = {
