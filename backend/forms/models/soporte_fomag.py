@@ -26,9 +26,11 @@ class SoporteFomag(models.Model):
     img_orden = models.CharField(
         max_length=250, db_column="IMG_ORDEN", blank=True, null=True
     )
-    ipzoho = models.CharField(max_length=20, db_column="IPZOHO", blank=True, null=True)
+    ipzoho = models.CharField(
+        max_length=20, db_column="IPZOHO", blank=True, null=True, default="10.25.2.52"
+    )
     usuario = models.CharField(
-        max_length=15, db_column="USUARIO", blank=True, null=True
+        max_length=15, db_column="USUARIO", blank=True, null=True, default="FORMS"
     )
     aufecmod = models.DecimalField(
         max_digits=8, decimal_places=0, db_column="AUFECMOD", blank=True, null=True
@@ -36,7 +38,9 @@ class SoporteFomag(models.Model):
     auhormod = models.DecimalField(
         max_digits=6, decimal_places=0, db_column="AUHORMOD", blank=True, null=True
     )
-    aufeccrea = models.DateTimeField(db_column="AUFECCREA", blank=True, null=True)
+    aufeccrea = models.DateTimeField(
+        db_column="AUFECCREA", blank=True, null=True, auto_now_add=True
+    )
     certificado = models.CharField(
         max_length=2, db_column="CERTIFICADO", blank=True, null=True
     )
