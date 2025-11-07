@@ -23,6 +23,6 @@ class UploadedFile:
             default_storage.save(full_path, ContentFile(f.read()))
 
             # URL accesible
-            file_urls.append(settings.MEDIA_URL + full_path)
+            file_urls.append(full_path)
 
         return file_urls
