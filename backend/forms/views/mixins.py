@@ -14,7 +14,6 @@ class DynamicSerializerMixin:
         """
         # self.kwargs contiene los parámetros de la URL
         model_name = self.kwargs.get("model_name")
-        print(f"🎯 Buscando modelo: {model_name}")  # Debug
 
         if not model_name:
             raise ValueError("No se especificó el nombre del modelo en la URL")
@@ -24,12 +23,10 @@ class DynamicSerializerMixin:
 
         if not model_class:
             available_models = list(get_registered_models().keys())
-            print(f"❌ Modelo no encontrado. Disponibles: {available_models}")  # Debug
             raise ValueError(
                 f'Modelo "{model_name}" no encontrado. Modelos disponibles: {available_models}'
             )
 
-        print(f"✅ Modelo encontrado: {model_class}")  # Debug
         return model_class
 
     def get_serializer_class(self):
