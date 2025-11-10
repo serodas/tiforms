@@ -1,6 +1,6 @@
 services:
-  tiforms-backend:
-    container_name: tiforms-backend
+  forms-backend:
+    container_name: forms-backend
     build:
       context: ./backend
       dockerfile: ./docker/Dockerfile
@@ -15,8 +15,8 @@ services:
     ports:
       - "8000:8000"
 
-  tiforms-frontend:
-    container_name: tiforms-frontend
+  forms-frontend:
+    container_name: forms-frontend
     build:
       context: ./frontend
       dockerfile: ./docker/Dockerfile.dev
@@ -26,9 +26,9 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - NEXT_PUBLIC_API_BASE=http://tiforms-backend:8000/api
+      - NEXT_PUBLIC_API_BASE=http://forms-backend:8000/api
     ports:
       - "3000:3000"
     depends_on:
-      - tiforms-backend
+      - forms-backend
 
