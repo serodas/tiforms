@@ -93,9 +93,8 @@ export default function AsyncSelectField({
             abortControllerRef.current = abortController;
 
             try {
-                const base = process.env.NEXT_PUBLIC_API_BASE;
                 const response = await fetch(
-                    `${base}${apiUrl}?search=${encodeURIComponent(inputValue)}`,
+                    `/api/proxy/${apiUrl}?search=${encodeURIComponent(inputValue)}`,
                     {
                         signal: abortController.signal
                     }

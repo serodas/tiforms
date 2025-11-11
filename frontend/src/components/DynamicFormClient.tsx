@@ -196,8 +196,7 @@ export default function DynamicFormClient({ form }: { form: FormData }) {
                 }
             }
 
-            const base = process.env.NEXT_PUBLIC_API_BASE;
-            const res = await fetch(`${base}/submissions/`, {
+            const res = await fetch('/api/proxy/submissions/', {
                 method: "POST",
                 body: fd,
             });

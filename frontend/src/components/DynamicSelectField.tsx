@@ -55,9 +55,8 @@ export default function DynamicSelectField({
 
         setIsLoading(true);
         try {
-            const base = process.env.NEXT_PUBLIC_API_BASE;
             const response = await fetch(
-                `${base}${dynamicOptionsUrl}?search=${encodeURIComponent(currentDependsValue)}`
+                `/api/proxy/${dynamicOptionsUrl}?search=${encodeURIComponent(currentDependsValue)}`
             );
 
             if (!response.ok) {
