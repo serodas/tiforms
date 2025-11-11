@@ -15,14 +15,12 @@ export async function GET(
     const targetPath = path.join("/");
     const backendUrl = `${API_BASE}/${targetPath}${search}`;
 
-    console.log("➡️ Proxy GET to:", backendUrl);
 
     try {
         const res = await fetch(backendUrl, { method: "GET" });
         const text = await res.text();
         return new NextResponse(text, { status: res.status });
     } catch (error) {
-        console.error("❌ Error proxying GET:", error);
         return NextResponse.json({ error: "Proxy GET error" }, { status: 500 });
     }
 }
@@ -37,9 +35,8 @@ export async function POST(
     const { path } = await context.params;
     const targetPath = path.join("/");
 
-    const backendUrl = `${API_BASE}/${targetPath}/`; // 🔹 Django requiere el slash final
+    const backendUrl = `${API_BASE}/${targetPath}/`;
 
-    console.log("➡️ Proxy POST to:", backendUrl);
 
     try {
         const body = await req.text();
@@ -55,7 +52,6 @@ export async function POST(
         const text = await res.text();
         return new NextResponse(text, { status: res.status });
     } catch (error) {
-        console.error("❌ Error proxying POST:", error);
         return NextResponse.json({ error: "Proxy POST error" }, { status: 500 });
     }
 }
