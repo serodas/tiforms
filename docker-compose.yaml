@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  forms-backend:
+    container_name: forms-backend
+    build:
+      context: ./backend
+      dockerfile: ./docker/Dockerfile
+    restart: unless-stopped
+    environment:
+      - ODBCINI=/etc/odbc.ini
+      - DB2CLIINIPATH=/etc
+      - PYTHONPATH=/app
+      - DJANGO_DEBUG=False
+    env_file:
+      - ./backend/.env
+    volumes:
+       - ./data/static:/app/static
+       - ./data/uploads:/app/uploads
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/healthz/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  forms-frontend:
+    container_name: forms-frontend
+    build:
+      context: ./frontend
+      dockerfile: ./docker/Dockerfile.prod
+    command: npm start
+    restart: unless-stopped
+    volumes:
+      - ./frontend/public:/app/public
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
+    expose:
+      - "3000"
+    depends_on:
+      - forms-backend
+    
+  forms-nginx:
+    image: nginx:alpine
+    container_name: forms-nginx
+    restart: unless-stopped
+    expose:
+      - "80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./data/static:/app/static:ro
+      - ./data/uploads:/app/uploads:ro
+    depends_on:
+      - forms-backend
+      - forms-frontend
+
+

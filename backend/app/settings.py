@@ -26,10 +26,17 @@ SECRET_KEY = "django-insecure-s#-&3qpl$^-vro7aij5x^eyz!w1=yjb#t1%o1cc%tk=waz#q+n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "tiforms-backend"]
+ALLOWED_HOSTS = [
+    "forms.comfamiliar.com",
+    "localhost",
+    "127.0.0.1",
+    "forms-backend",
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://forms-backend",
+    "http://forms.comfamiliar.com",
 ]
 
 LOGGING = {
